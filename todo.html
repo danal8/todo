@@ -158,7 +158,32 @@ input[type=date]{color-scheme:dark}
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbztL9jMNEbtqB0FDd4oB_rOOP37uDbvcBMCsJC_8CqUU2Cg2hMllcDxpTSvuO4-JAmg/exec';
+const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
+const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
+const ROW_ID=1;
+
+async function supaGet(){
+  const r=await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.'+ROW_ID+'&select=data',{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  });
+  const j=await r.json();
+  return j&&j.length>0?j[0].data:null;
+}
+
+async function supaSet(data){
+  const r=await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.'+ROW_ID,{
+    method:'PATCH',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({data:data})
+  });
+  if(!r.ok){
+    await fetch(SUPA_URL+'/rest/v1/tododata',{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({id:ROW_ID,data:data})
+    });
+  }
+}
 
 function pad(n){return String(n).padStart(2,'0');}
 function buildTS(hId,mId){
@@ -188,20 +213,6 @@ function setSyncStatus(status,msg){
   document.getElementById('sync-label').textContent=msg;
 }
 
-function jsonpLoad(){
-  return new Promise((resolve,reject)=>{
-    const cb='cb_'+Date.now();
-    const script=document.createElement('script');
-    const timer=setTimeout(()=>{delete window[cb];script.remove();reject(new Error('timeout'));},8000);
-    window[cb]=function(data){
-      clearTimeout(timer);delete window[cb];script.remove();resolve(data);
-    };
-    script.src=SCRIPT_URL+'?callback='+cb+'&t='+Date.now();
-    script.onerror=()=>{clearTimeout(timer);delete window[cb];script.remove();reject(new Error('error'));};
-    document.head.appendChild(script);
-  });
-}
-
 let saveTimeout=null;
 function save(){
   localStorage.setItem('todo_bk',JSON.stringify(state));
@@ -213,25 +224,29 @@ async function saveToCloud(){
   setSyncStatus('loading','Αποθήκευση...');
   try{
     const s={...state,renamingList:null,addingList:false,editingId:null};
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(s),mode:'no-cors'});
+    await supaSet(JSON.stringify(s));
     setSyncStatus('ok','Συγχρονισμένο ✓');
-  }catch(e){setSyncStatus('err','Σφάλμα αποθήκευσης');}
+  }catch(e){
+    setSyncStatus('err','Σφάλμα αποθήκευσης');
+  }
 }
 
 async function loadFromCloud(){
   setSyncStatus('loading','Φόρτωση...');
   try{
-    const data=await jsonpLoad();
-    if(data&&data.lists&&data.tasks){
-      state={...state,...data,renamingList:null,addingList:false,editingId:null};
-      setSyncStatus('ok','Συγχρονισμένο ✓');
-    } else {
-      loadLocal();
+    const raw=await supaGet();
+    if(raw){
+      const data=JSON.parse(raw);
+      if(data&&data.lists&&data.tasks){
+        state={...state,...data,renamingList:null,addingList:false,editingId:null};
+        setSyncStatus('ok','Συγχρονισμένο ✓');
+        render();return;
+      }
     }
+    loadLocal();render();
   }catch(e){
-    loadLocal();
+    loadLocal();render();
   }
-  render();
 }
 
 function loadLocal(){
@@ -239,7 +254,7 @@ function loadLocal(){
     const b=localStorage.getItem('todo_bk');
     if(b){const d=JSON.parse(b);state={...state,...d,renamingList:null,addingList:false,editingId:null};}
     setSyncStatus('err','Offline — τοπικά δεδομένα');
-  }catch(e){setSyncStatus('err','Σφάλμα φόρτωσης');}
+  }catch(e){setSyncStatus('err','Σφάλμα');}
 }
 
 function showToast(msg,type){
@@ -304,8 +319,7 @@ function renderStats(){
 }
 function renderFilters(){
   document.querySelectorAll('.filter-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.filter===state.filter);
-    b.onclick=()=>{state.filter=b.dataset.filter;render();};
+    b.classList.toggle('active',b.dataset.filter===state.filter);b.onclick=()=>{state.filter=b.dataset.filter;render();};
   });
 }
 function renderSort(){
