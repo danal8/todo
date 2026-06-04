@@ -235,13 +235,15 @@ async function loadFromCloud(){
   setSyncStatus('loading','Φόρτωση...');
   try{
     const raw=await supaGet();
-    if(raw){
-      const data=JSON.parse(raw);
-      const parsed=typeof data==="string"?JSON.parse(data):data; if(parsed&&parsed.lists&&parsed.tasks){data=parsed;
+    if(raw!==null){
+      let data=raw;
+      try{data=JSON.parse(raw);}catch(e){}
+      if(typeof data==='string'){try{data=JSON.parse(data);}catch(e){data={};}}
+      if(data&&data.lists&&data.tasks){
         state={...state,...data,renamingList:null,addingList:false,editingId:null};
-        setSyncStatus('ok','Συγχρονισμένο ✓');
-        render();return;
       }
+      setSyncStatus('ok','Συγχρονισμένο ✓');
+      render();return;
     }
     loadLocal();render();
   }catch(e){
