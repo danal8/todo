@@ -4,21 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>To-Do Lists</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;padding:1.5rem;min-height:100vh}
 h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;align-items:center;gap:10px}
+.sync-bar{display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:8px 14px;margin-bottom:1.25rem;font-size:12px;color:#888}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:#4ade80}
+.sync-dot.err{background:#e74c3c}
+.sync-dot.loading{background:#f0c040}
 .lists-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
 .list-tab{padding:5px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;font-size:13px;transition:all .15s}
 .list-tab.active{background:#fff;color:#000;border-color:#fff}
-.list-tab:hover:not(.active){border-color:#aaa;color:#fff}
+.list-tab:hover:not(.active){border-color:#aaa}
 .list-tab.add-list{border-style:dashed;font-size:18px;padding:2px 14px;color:#aaa}
 .list-tab.add-list:hover{color:#fff;border-color:#fff}
 .list-tab.del-list{color:#e74c3c;border-color:#e74c3c;font-size:12px}
 .list-tab.del-list:hover{background:#e74c3c;color:#fff}
 .list-rename-inp{background:#222;border:1px solid #777;border-radius:20px;padding:4px 12px;color:#fff;font-size:13px;outline:none;width:120px}
-.edit-pencil{background:transparent;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:#aaa;border-radius:4px;transition:color .15s;line-height:1}
+.edit-pencil{background:transparent;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:#aaa;border-radius:4px}
 .edit-pencil:hover{color:#fff}
 .add-panel{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:14px;margin-bottom:1.25rem}
 .row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
@@ -72,10 +76,10 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .meta-time{color:#ccc}
 .task-notes{font-size:13px;color:#ccc;margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-word;border-left:2px solid #333;padding-left:8px}
 .task-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;margin-top:1px}
-.edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:5px 10px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
+.edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:5px 10px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .edit-btn:hover{background:#3a3a3a}
 .edit-btn.active{background:#1e3a5f;border-color:#1e4d7a;color:#4a9eff}
-.del-btn{background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
+.del-btn{background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .del-btn:hover{background:#5a1a1a}
 .edit-panel{background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -105,7 +109,13 @@ input[type=date]{color-scheme:dark}
 </head>
 <body>
 <div id="app" style="position:relative;max-width:1200px;margin:0 auto">
-<h1>&#9989; To-Do Lists</h1>
+<h1>✅ To-Do Lists</h1>
+
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-label">Σύνδεση με Google Sheets...</span>
+</div>
+
 <div class="lists-row" id="lists-row"></div>
 <div class="add-panel">
   <div class="row">
@@ -162,6 +172,8 @@ input[type=date]{color-scheme:dark}
 <div class="toast" id="toast"></div>
 
 <script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztL9jMNEbtqB0FDd4oB_rOOP37uDbvcBMCsJC_8CqUU2Cg2hMllcDxpTSvuO4-JAmg/exec';
+
 function pad(n){return String(n).padStart(2,'0');}
 function buildTS(hId,mId){
   const hs=document.getElementById(hId),ms=document.getElementById(mId);
@@ -189,8 +201,57 @@ let state={
   tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},
   filter:'all',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null
 };
-try{const s=localStorage.getItem('todo_standalone');if(s)state=JSON.parse(s);}catch(e){}
-function save(){try{localStorage.setItem('todo_standalone',JSON.stringify(state));}catch(e){}}
+
+function setSyncStatus(status, msg){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+status;
+  lbl.textContent=msg;
+}
+
+let saveTimeout=null;
+async function saveToCloud(){
+  setSyncStatus('loading','Αποθήκευση...');
+  try{
+    const s={...state, renamingList:null, addingList:false, editingId:null};
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(s),mode:'no-cors'});
+    localStorage.setItem('todo_backup',JSON.stringify(s));
+    setSyncStatus('ok','Συγχρονισμένο ✓');
+  }catch(e){
+    setSyncStatus('err','Σφάλμα σύνδεσης');
+  }
+}
+
+function save(){
+  localStorage.setItem('todo_backup',JSON.stringify(state));
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(saveToCloud,800);
+}
+
+async function loadFromCloud(){
+  setSyncStatus('loading','Φόρτωση δεδομένων...');
+  try{
+    const resp=await fetch(SCRIPT_URL+'?t='+Date.now());
+    const text=await resp.text();
+    if(text&&text!=='{}'){
+      const data=JSON.parse(text);
+      if(data.lists&&data.tasks){
+        state={...state,...data,renamingList:null,addingList:false,editingId:null};
+        setSyncStatus('ok','Συγχρονισμένο ✓');
+        render();return;
+      }
+    }
+    const backup=localStorage.getItem('todo_backup');
+    if(backup){state={...state,...JSON.parse(backup),renamingList:null,addingList:false,editingId:null};}
+    setSyncStatus('ok','Τοπικά δεδομένα');
+    render();
+  }catch(e){
+    const backup=localStorage.getItem('todo_backup');
+    if(backup){state={...state,...JSON.parse(backup),renamingList:null,addingList:false,editingId:null};}
+    setSyncStatus('err','Offline — τοπικά δεδομένα');
+    render();
+  }
+}
 
 function showToast(msg,type){
   const t=document.getElementById('toast');
@@ -216,7 +277,7 @@ function fmtTime(h,m){if(!h)return '';return h+':'+m;}
 function commitRename(old,nw){
   nw=nw.trim();
   if(!nw||nw===old){state.renamingList=null;render();return;}
-  if(state.lists.includes(nw)&&nw!==old){showToast('Υπάρχει ήδη λίστα με αυτό το όνομα.','err');state.renamingList=null;render();return;}
+  if(state.lists.includes(nw)&&nw!==old){showToast('Υπάρχει ήδη!','err');state.renamingList=null;render();return;}
   const i=state.lists.indexOf(old);
   state.lists[i]=nw;state.tasks[nw]=state.tasks[old];delete state.tasks[old];
   if(state.activeList===old)state.activeList=nw;
@@ -250,7 +311,7 @@ function renderLists(){
     if(state.lists.length>1){
       const db=document.createElement('button');db.className='list-tab del-list';
       db.textContent='🗑 '+state.activeList;
-      db.onclick=()=>{if(!confirm('Διαγραφή λίστας "'+state.activeList+'";'))return;const i=state.lists.indexOf(state.activeList);delete state.tasks[state.activeList];state.lists.splice(i,1);state.activeList=state.lists[Math.max(0,i-1)];save();render();};
+      db.onclick=()=>{if(!confirm('Διαγραφή "'+state.activeList+'";'))return;const i=state.lists.indexOf(state.activeList);delete state.tasks[state.activeList];state.lists.splice(i,1);state.activeList=state.lists[Math.max(0,i-1)];save();render();};
       row.appendChild(db);
     }
   }
@@ -287,10 +348,8 @@ function makeEditPanel(task){
     const ms=document.createElement('select');ms.className='etsel';
     ms.innerHTML='<option value="">--</option>';
     for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=pad(m);o.textContent=pad(m);if(pad(m)===mv)o.selected=true;ms.appendChild(o);}
-    g.appendChild(hs);g.appendChild(sep);g.appendChild(ms);
-    g._h=hs;g._m=ms;return g;
+    g.appendChild(hs);g.appendChild(sep);g.appendChild(ms);g._h=hs;g._m=ms;return g;
   }
-
   const r1=document.createElement('div');r1.className='edit-row';
   const l1=document.createElement('span');l1.className='edit-label';l1.textContent='Τίτλος';
   const ti=document.createElement('input');ti.className='edit-inp';ti.value=task.text;
@@ -324,19 +383,15 @@ function makeEditPanel(task){
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
   saveB.onclick=()=>{
-    const all=state.tasks[state.activeList];
-    const t=all.find(t=>t.id===task.id);if(!t)return;
-    t.text=ti.value.trim()||t.text;
-    t.date=di.value||'';t.allDay=adc.checked;
-    t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';
-    t.teH=teg._h.value||'';t.teM=teg._m.value||'';
+    const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
+    t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
+    t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
     t.prio=psel.value;t.notes=ni.value.trim();
     state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
   canB.onclick=()=>{state.editingId=null;render();};
   r5.appendChild(saveB);r5.appendChild(canB);
-
   panel.appendChild(r1);panel.appendChild(r2);panel.appendChild(r3);panel.appendChild(r4);panel.appendChild(r5);
   return panel;
 }
@@ -353,7 +408,6 @@ function renderTasks(){
     const main=document.createElement('div');main.className='task-main';
     const txt=document.createElement('div');txt.className='task-text';txt.textContent=task.text;
     main.appendChild(txt);
-
     if(task.date||task.tsH){
       const meta=document.createElement('div');meta.className='task-meta';
       if(task.date){const s=document.createElement('span');s.className='meta-date';s.textContent='📅 '+fmtDate(task.date)+(task.allDay?' · Ολοήμερο':'');meta.appendChild(s);}
@@ -363,7 +417,6 @@ function renderTasks(){
     if(task.notes&&state.editingId!==task.id){
       const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);
     }
-
     const actions=document.createElement('div');actions.className='task-actions';
     const editBtn=document.createElement('button');
     editBtn.className='edit-btn'+(state.editingId===task.id?' active':'');
@@ -406,7 +459,7 @@ function addTask(){
   clearDT();state.filter='all';save();render();
 }
 
-render();
+loadFromCloud();
 </script>
 </body>
 </html>
