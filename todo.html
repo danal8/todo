@@ -76,6 +76,7 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .meta-date{color:#4a9eff}
 .meta-time{color:#ccc}
 .task-notes{font-size:13px;color:#ccc;margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-word;border-left:2px solid #333;padding-left:8px}
+.completed-date{font-size:11px;color:#4ade80;margin-top:4px;display:flex;align-items:center;gap:4px}
 .task-actions{display:flex;gap:5px;flex-shrink:0;align-items:center;margin-top:1px}
 .edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:6px 8px;color:#fff;cursor:pointer;font-size:15px;line-height:1;white-space:nowrap;min-width:32px;text-align:center}
 .edit-btn:hover{background:#3a3a3a}
@@ -396,8 +397,12 @@ function renderTasks(){
     const top=document.createElement('div');top.className='task-top';
     const cb=document.createElement('div');cb.className='cb'+(task.done?' checked':'');cb.onclick=()=>{
     task.done=!task.done;
-    if(task.done && state.filter==='active') state.filter='active';
-    if(!task.done && state.filter==='done') state.filter='done';
+    if(task.done){
+      const now=new Date();
+      task.completedAt=now.toISOString();
+    } else {
+      delete task.completedAt;
+    }
     save();render();
   };
     const dot=document.createElement('div');dot.className='pdot p-'+task.prio;
@@ -410,6 +415,13 @@ function renderTasks(){
       main.appendChild(meta);
     }
     if(task.notes&&state.editingId!==task.id){const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);}
+    if(task.done&&task.completedAt&&state.editingId!==task.id){
+      const cd=document.createElement('div');cd.className='completed-date';
+      const dt=new Date(task.completedAt);
+      const str=pad(dt.getDate())+'/'+pad(dt.getMonth()+1)+'/'+dt.getFullYear()+' '+pad(dt.getHours())+':'+pad(dt.getMinutes());
+      cd.textContent='✅ Ολοκληρώθηκε: '+str;
+      main.appendChild(cd);
+    }
     const actions=document.createElement('div');actions.className='task-actions';
     const calBtn2=document.createElement('button');
     calBtn2.style.cssText='background:'+(task.gcal?'#1a3a1a':'#1e3a5f')+';border:1px solid '+(task.gcal?'#2d6b2d':'#1e4d7a')+';border-radius:6px;padding:6px 8px;color:'+(task.gcal?'#4ade80':'#4a9eff')+';cursor:pointer;font-size:15px;line-height:1;min-width:32px;text-align:center';
