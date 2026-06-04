@@ -240,7 +240,7 @@ async function loadFromCloud(){
       try{data=JSON.parse(raw);}catch(e){}
       if(typeof data==='string'){try{data=JSON.parse(data);}catch(e){data={};}}
       if(data&&data.lists&&data.tasks){
-        state={...state,...data,renamingList:null,addingList:false,editingId:null};
+        state={...state,...data,renamingList:null,addingList:false,editingId:null,filter:'active'};
       }
       setSyncStatus('ok','Συγχρονισμένο ✓');
       render();return;
@@ -254,7 +254,7 @@ async function loadFromCloud(){
 function loadLocal(){
   try{
     const b=localStorage.getItem('todo_bk');
-    if(b){const d=JSON.parse(b);state={...state,...d,renamingList:null,addingList:false,editingId:null};}
+    if(b){const d=JSON.parse(b);state={...state,...d,renamingList:null,addingList:false,editingId:null,filter:'active'};}
     setSyncStatus('err','Offline — τοπικά δεδομένα');
   }catch(e){setSyncStatus('err','Σφάλμα');}
 }
