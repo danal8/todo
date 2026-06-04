@@ -60,14 +60,14 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .tasks-list{display:flex;flex-direction:column;gap:6px}
 .task-item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;transition:border-color .15s}
 .task-item:hover{border-color:#444}
-.task-item.done{opacity:.4}
+.task-item.done{opacity:1}
 .task-top{display:flex;align-items:flex-start;gap:10px}
 .task-main{flex:1;min-width:0}
 .cb{width:18px;height:18px;border-radius:50%;border:2px solid #666;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
 .cb.checked{background:#fff;border-color:#fff}
 .cb.checked::after{content:'✓';font-size:11px;color:#000;font-weight:700}
 .task-text{font-size:14px;color:#fff;word-break:break-word;font-weight:500;overflow-wrap:break-word;min-width:0}
-.task-item.done .task-text{text-decoration:line-through;color:#666}
+.task-item.done .task-text{color:#fff}
 .pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .p-high{background:#e74c3c}
 .p-med{background:#f39c12}
@@ -141,13 +141,11 @@ input[type=date]{color-scheme:dark}
 <div class="stats" id="stats"></div>
 <div class="toolbar">
   <div class="filters" id="filters">
-    <button class="filter-btn active" data-filter="all">Όλες</button>
-    <button class="filter-btn" data-filter="active">Εκκρεμείς</button>
+    <button class="filter-btn active" data-filter="active">Εκκρεμείς</button>
     <button class="filter-btn" data-filter="done">Ολοκληρωμένες</button>
-    <button class="filter-btn" data-filter="high">🔴 Υψηλή</button>
-    <button class="filter-btn" data-filter="med">🟡 Μέτρια</button>
-    <button class="filter-btn" data-filter="low">🟢 Χαμηλή</button>
-    <button class="filter-btn" data-filter="cal">📅 Με ημ/νία</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex:1;max-width:320px">
+    <input id="search-inp" class="inp" type="text" placeholder="🔍 Αναζήτηση..." style="padding:5px 10px;font-size:13px;height:32px" oninput="render()" />
   </div>
   <div class="sort-row">
     <button class="sort-btn" id="sort-date">📅 Ημ/νία</button>
@@ -207,7 +205,7 @@ document.getElementById('chk-allday').onchange=function(){
 };
 document.getElementById('clear-btn').onclick=clearDT;
 
-let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'all',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
+let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'active',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
 
 function setSyncStatus(status,msg){
   document.getElementById('sync-dot').className='sync-dot '+status;
@@ -274,7 +272,9 @@ function getSorted(tasks){
 }
 function getFiltered(){
   const tasks=state.tasks[state.activeList]||[];const f=state.filter;
-  let out=f==='all'?tasks:f==='active'?tasks.filter(t=>!t.done):f==='done'?tasks.filter(t=>t.done):f==='high'?tasks.filter(t=>t.prio==='high'):f==='med'?tasks.filter(t=>t.prio==='med'):f==='low'?tasks.filter(t=>t.prio==='low'):f==='cal'?tasks.filter(t=>t.date):tasks;
+  let out=f==='active'?tasks.filter(t=>!t.done):f==='done'?tasks.filter(t=>t.done):tasks.filter(t=>!t.done);
+  const q=(document.getElementById('search-inp')||{}).value||'';
+  if(q.trim()) out=out.filter(t=>t.text.toLowerCase().includes(q.trim().toLowerCase())||(t.notes||'').toLowerCase().includes(q.trim().toLowerCase()));
   return getSorted(out);
 }
 function fmtDate(d){if(!d)return '';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y;}
@@ -322,7 +322,12 @@ function renderStats(){
 }
 function renderFilters(){
   document.querySelectorAll('.filter-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.filter===state.filter);b.onclick=()=>{state.filter=b.dataset.filter;render();};
+    b.classList.toggle('active',b.dataset.filter===state.filter);
+    b.onclick=()=>{
+      state.filter=b.dataset.filter;
+      const si=document.getElementById('search-inp');if(si)si.value='';
+      render();
+    };
   });
 }
 function renderSort(){
@@ -385,11 +390,16 @@ function makeEditPanel(task){
 }
 function renderTasks(){
   const list=document.getElementById('tasks-list');const tasks=getFiltered();list.innerHTML='';
-  if(!tasks.length){list.innerHTML='<div class="empty">Καμία εργασία εδώ.</div>';return;}
+  if(!tasks.length){list.innerHTML='<div class="empty">'+(state.filter==="done"?'Καμία ολοκληρωμένη εργασία.':'Καμία εκκρεμής εργασία.')+'</div>';return;}
   tasks.forEach(task=>{
     const item=document.createElement('div');item.className='task-item'+(task.done?' done':'');
     const top=document.createElement('div');top.className='task-top';
-    const cb=document.createElement('div');cb.className='cb'+(task.done?' checked':'');cb.onclick=()=>{task.done=!task.done;save();render();};
+    const cb=document.createElement('div');cb.className='cb'+(task.done?' checked':'');cb.onclick=()=>{
+    task.done=!task.done;
+    if(task.done && state.filter==='active') state.filter='active';
+    if(!task.done && state.filter==='done') state.filter='done';
+    save();render();
+  };
     const dot=document.createElement('div');dot.className='pdot p-'+task.prio;
     const main=document.createElement('div');main.className='task-main';
     const txt=document.createElement('div');txt.className='task-text';txt.textContent=task.text;main.appendChild(txt);
