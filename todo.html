@@ -41,7 +41,7 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .clear-btn{background:transparent;border:1px solid #666;border-radius:8px;padding:9px 14px;font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .clear-btn:hover{border-color:#aaa}
 .allday-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.allday-wrap input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#fff}
+.allday-wrap input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#000;border:2px solid #fff}
 .allday-wrap label{font-size:13px;color:#fff;cursor:pointer}
 .time-sep{color:#888;font-size:13px;flex-shrink:0}
 .time-group{display:flex;align-items:center;gap:4px}
@@ -437,15 +437,26 @@ function addToCalendar(task, btn){
   if(!task.date){ showToast('Δεν έχει ημερομηνία!','err'); return; }
   const tsH=task.tsH||'', tsM=task.tsM||'';
   const teH=task.teH||'', teM=task.teM||'';
+  const notes=task.notes||'';
   let url;
   if(task.allDay){
     const d=task.date.replace(/-/g,'');
-    url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(task.text)+'&dates='+d+'/'+d;
+    // end date must be next day for all-day events
+    const nextDay=new Date(task.date);nextDay.setDate(nextDay.getDate()+1);
+    const nd=nextDay.toISOString().slice(0,10).replace(/-/g,'');
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +'&text='+encodeURIComponent(task.text)
+      +'&dates='+d+'/'+nd
+      +(notes?'&details='+encodeURIComponent(notes):'');
   } else {
     const d=task.date.replace(/-/g,'');
     const sh=tsH||'09',sm=tsM||'00';
     const eh=teH||(String(parseInt(sh)+1).padStart(2,'0')),em=teM||'00';
-    url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(task.text)+'&dates='+d+'T'+sh+sm+'00/'+d+'T'+eh+em+'00&ctz=Europe/Athens';
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +'&text='+encodeURIComponent(task.text)
+      +'&dates='+d+'T'+sh+sm+'00/'+d+'T'+eh+em+'00'
+      +'&ctz=Europe/Athens'
+      +(notes?'&details='+encodeURIComponent(notes):'');
   }
   task.gcal=true;save();render();
   window.open(url,'_blank');
