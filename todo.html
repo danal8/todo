@@ -107,18 +107,13 @@ input[type=date]{color-scheme:dark}
 </style>
 </head>
 <body>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <div id="app" style="max-width:1200px;margin:0 auto">
 <h1>✅ To-Do Lists</h1>
 <div class="sync-bar">
   <div class="sync-dot loading" id="sync-dot"></div>
   <span id="sync-label">Σύνδεση...</span>
 </div>
-<div class="sync-bar" id="cal-bar" style="margin-bottom:.75rem">
-  <div class="sync-dot" id="cal-dot"></div>
-  <span id="cal-label">Google Calendar: Αποσυνδεδεμένο</span>
-  <button id="cal-auth-btn" onclick="handleCalAuth()" style="margin-left:auto;background:#1e3a5f;border:1px solid #1e4d7a;border-radius:6px;padding:4px 12px;color:#4a9eff;cursor:pointer;font-size:12px">🗓 Σύνδεση Calendar</button>
-</div>
+
 <div class="lists-row" id="lists-row"></div>
 <div class="add-panel">
   <div class="row">
@@ -438,92 +433,25 @@ function addTask(){
   state.tasks[state.activeList].unshift({text:txt,prio,done:false,date,allDay,tsH,tsM,teH,teM,notes:'',id:Date.now()});
   document.getElementById('inp-task').value='';clearDT();state.filter='all';save();render();
 }
-// Google Calendar OAuth
-const CAL_CLIENT_ID = '831996798635-bslk9sfabbe4rv4q89ue5ggjnf943o5s.apps.googleusercontent.com';
-const CAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
-let calTokenClient = null, calToken = null, calExpiry = 0;
-
-function updateCalUI(){
-  const dot = document.getElementById('cal-dot');
-  const lbl = document.getElementById('cal-label');
-  const btn = document.getElementById('cal-auth-btn');
-  if(calToken && Date.now() < calExpiry){
-    dot.className = 'sync-dot ok';
-    lbl.textContent = 'Google Calendar: Συνδεδεμένο ✓';
-    btn.textContent = '🔓 Αποσύνδεση';
-    btn.style.background = '#2a1a1a';
-    btn.style.borderColor = '#7a1e1e';
-    btn.style.color = '#e74c3c';
-  } else {
-    dot.className = 'sync-dot';
-    lbl.textContent = 'Google Calendar: Αποσυνδεδεμένο';
-    btn.textContent = '🗓 Σύνδεση Calendar';
-    btn.style.background = '#1e3a5f';
-    btn.style.borderColor = '#1e4d7a';
-    btn.style.color = '#4a9eff';
-  }
-}
-
-function handleCalAuth(){
-  if(calToken && Date.now() < calExpiry){
-    calToken = null; calExpiry = 0; updateCalUI(); return;
-  }
-  if(!window.google){ showToast('Φόρτωση Google...δοκίμασε ξανά','err'); return; }
-  if(!calTokenClient){
-    calTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CAL_CLIENT_ID,
-      scope: CAL_SCOPE,
-      callback: (resp) => {
-        if(resp.error){ showToast('Σφάλμα σύνδεσης: '+resp.error,'err'); return; }
-        calToken = resp.access_token;
-        calExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-        updateCalUI();
-        showToast('Συνδέθηκες με Google Calendar!','ok');
-      }
-    });
-  }
-  calTokenClient.requestAccessToken({prompt:'consent'});
-}
-
-async function addToCalendar(task, btn){
+function addToCalendar(task, btn){
   if(!task.date){ showToast('Δεν έχει ημερομηνία!','err'); return; }
-  if(!calToken || Date.now() >= calExpiry){ showToast('Συνδέσου πρώτα με Google Calendar!','err'); return; }
-  
-  btn.disabled = true;
-  btn.textContent = '⏳';btn.title='Αποστολή...';
-  
-  const tsH = task.tsH||'09', tsM = task.tsM||'00';
-  const teH = task.teH||(String(parseInt(tsH)+1).padStart(2,'0')), teM = task.teM||'00';
-  
-  let body;
+  const tsH=task.tsH||'', tsM=task.tsM||'';
+  const teH=task.teH||'', teM=task.teM||'';
+  let url;
   if(task.allDay){
-    body = {summary:task.text, start:{date:task.date}, end:{date:task.date}, reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}};
+    const d=task.date.replace(/-/g,'');
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(task.text)+'&dates='+d+'/'+d;
   } else {
-    body = {summary:task.text, start:{dateTime:task.date+'T'+tsH+':'+tsM+':00',timeZone:'Europe/Athens'}, end:{dateTime:task.date+'T'+teH+':'+teM+':00',timeZone:'Europe/Athens'}, reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}};
+    const d=task.date.replace(/-/g,'');
+    const sh=tsH||'09',sm=tsM||'00';
+    const eh=teH||(String(parseInt(sh)+1).padStart(2,'0')),em=teM||'00';
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(task.text)+'&dates='+d+'T'+sh+sm+'00/'+d+'T'+eh+em+'00&ctz=Europe/Athens';
   }
-  
-  try{
-    const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+calToken,'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    task.gcal = true; save();
-    btn.textContent = '✓';btn.title='Προστέθηκε!';
-    btn.style.background = '#1a3a1a';
-    btn.style.borderColor = '#2d6b2d';
-    btn.style.color = '#4ade80';
-    showToast('✓ Προστέθηκε στο Google Calendar!','ok');
-  } catch(e){
-    btn.disabled = false;
-    btn.textContent = '🗓';
-    showToast('Σφάλμα: '+e.message,'err');
-  }
+  task.gcal=true;save();render();
+  window.open(url,'_blank');
+  showToast('Άνοιξε το Google Calendar — πάτα Save!','ok');
 }
-
 loadFromCloud();
-updateCalUI();
 </script>
 </body>
 </html>
