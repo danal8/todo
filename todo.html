@@ -12,7 +12,8 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .sync-dot{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0;transition:background .3s}
 .sync-dot.ok{background:#4ade80}
 .sync-dot.err{background:#e74c3c}
-.sync-dot.loading{background:#f0c040}
+.sync-dot.loading{background:#f0c040;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .lists-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
 .list-tab{padding:5px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;font-size:13px;transition:all .15s}
 .list-tab.active{background:#fff;color:#000;border-color:#fff}
@@ -50,7 +51,7 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .filter-btn.active{background:#333;color:#fff;border-color:#666}
 .filter-btn:hover:not(.active){color:#fff;border-color:#555}
 .sort-row{display:flex;gap:6px}
-.sort-btn{padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;transition:all .15s}
+.sort-btn{padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;font-size:12px;transition:all .15s}
 .sort-btn.active{background:#1a1a1a;color:#4a9eff;border-color:#1e4d7a}
 .sort-btn:hover:not(.active){color:#fff}
 .stats{display:flex;gap:14px;margin-bottom:.75rem;flex-wrap:wrap}
@@ -76,22 +77,20 @@ h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;
 .meta-time{color:#ccc}
 .task-notes{font-size:13px;color:#ccc;margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-word;border-left:2px solid #333;padding-left:8px}
 .task-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;margin-top:1px}
-.edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:5px 10px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:5px 10px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap}
 .edit-btn:hover{background:#3a3a3a}
 .edit-btn.active{background:#1e3a5f;border-color:#1e4d7a;color:#4a9eff}
-.del-btn{background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.del-btn{background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;cursor:pointer;font-size:12px;white-space:nowrap}
 .del-btn:hover{background:#5a1a1a}
 .edit-panel{background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .edit-label{font-size:12px;color:#aaa;width:90px;flex-shrink:0}
 .edit-inp{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;flex:1;min-width:0}
-.edit-inp:focus{border-color:#777}
 .etsel{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 6px;color:#fff;font-size:13px;outline:none;cursor:pointer;width:64px;text-align:center}
 .etsel option{background:#1a1a1a;color:#fff}
 .esel{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;cursor:pointer}
 .esel option{background:#1a1a1a;color:#fff}
 .notes-inp{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;width:100%;resize:vertical;min-height:60px;font-family:Arial,sans-serif}
-.notes-inp:focus{border-color:#777}
 .notes-inp::placeholder{color:#666}
 .save-btn{background:#fff;color:#000;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer}
 .save-btn:hover{background:#ddd}
@@ -108,14 +107,12 @@ input[type=date]{color-scheme:dark}
 </style>
 </head>
 <body>
-<div id="app" style="position:relative;max-width:1200px;margin:0 auto">
+<div id="app" style="max-width:1200px;margin:0 auto">
 <h1>✅ To-Do Lists</h1>
-
 <div class="sync-bar">
-  <div class="sync-dot" id="sync-dot"></div>
-  <span id="sync-label">Σύνδεση με Google Sheets...</span>
+  <div class="sync-dot loading" id="sync-dot"></div>
+  <span id="sync-label">Σύνδεση...</span>
 </div>
-
 <div class="lists-row" id="lists-row"></div>
 <div class="add-panel">
   <div class="row">
@@ -127,26 +124,15 @@ input[type=date]{color-scheme:dark}
     </select>
   </div>
   <div class="row">
-    <span style="color:#aaa;font-size:13px;flex-shrink:0">📅</span>
+    <span style="color:#aaa;font-size:13px">📅</span>
     <input id="inp-date" class="inp inp-date" type="date" />
     <span id="time-wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <span style="color:#aaa;font-size:13px;flex-shrink:0">🕐</span>
-      <div class="time-group">
-        <select class="tsel" id="ts-h"></select>
-        <span class="time-sep">:</span>
-        <select class="tsel" id="ts-m"></select>
-      </div>
+      <span style="color:#aaa;font-size:13px">🕐</span>
+      <div class="time-group"><select class="tsel" id="ts-h"></select><span class="time-sep">:</span><select class="tsel" id="ts-m"></select></div>
       <span class="time-sep">–</span>
-      <div class="time-group">
-        <select class="tsel" id="te-h"></select>
-        <span class="time-sep">:</span>
-        <select class="tsel" id="te-m"></select>
-      </div>
+      <div class="time-group"><select class="tsel" id="te-h"></select><span class="time-sep">:</span><select class="tsel" id="te-m"></select></div>
     </span>
-    <div class="allday-wrap">
-      <input type="checkbox" id="chk-allday" />
-      <label for="chk-allday">Ολοήμερο</label>
-    </div>
+    <div class="allday-wrap"><input type="checkbox" id="chk-allday"/><label for="chk-allday">Ολοήμερο</label></div>
     <button class="clear-btn" id="clear-btn">✕ Clear</button>
     <button class="add-btn" id="add-btn">+ Προσθήκη</button>
   </div>
@@ -172,7 +158,7 @@ input[type=date]{color-scheme:dark}
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztL9jMNEbtqB0FDd4oB_rOOP37uDbvcBMCsJC_8CqUU2Cg2hMllcDxpTSvuO4-JAmg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbztL9jMNEbtqB0FDd4oB_rOOP37uDbvcBMCsJC_8CqUU2Cg2hMllcDxpTSvuO4-JAmg/exec';
 
 function pad(n){return String(n).padStart(2,'0');}
 function buildTS(hId,mId){
@@ -183,7 +169,6 @@ function buildTS(hId,mId){
   for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=pad(m);o.textContent=pad(m);ms.appendChild(o);}
 }
 buildTS('ts-h','ts-m');buildTS('te-h','te-m');
-
 function clearDT(){
   document.getElementById('inp-date').value='';
   ['ts-h','ts-m','te-h','te-m'].forEach(id=>document.getElementById(id).value='');
@@ -196,66 +181,69 @@ document.getElementById('chk-allday').onchange=function(){
 };
 document.getElementById('clear-btn').onclick=clearDT;
 
-let state={
-  lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',
-  tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},
-  filter:'all',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null
-};
+let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'all',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
 
-function setSyncStatus(status, msg){
-  const dot=document.getElementById('sync-dot');
-  const lbl=document.getElementById('sync-label');
-  dot.className='sync-dot '+status;
-  lbl.textContent=msg;
+function setSyncStatus(status,msg){
+  document.getElementById('sync-dot').className='sync-dot '+status;
+  document.getElementById('sync-label').textContent=msg;
+}
+
+function jsonpLoad(){
+  return new Promise((resolve,reject)=>{
+    const cb='cb_'+Date.now();
+    const script=document.createElement('script');
+    const timer=setTimeout(()=>{delete window[cb];script.remove();reject(new Error('timeout'));},8000);
+    window[cb]=function(data){
+      clearTimeout(timer);delete window[cb];script.remove();resolve(data);
+    };
+    script.src=SCRIPT_URL+'?callback='+cb+'&t='+Date.now();
+    script.onerror=()=>{clearTimeout(timer);delete window[cb];script.remove();reject(new Error('error'));};
+    document.head.appendChild(script);
+  });
 }
 
 let saveTimeout=null;
+function save(){
+  localStorage.setItem('todo_bk',JSON.stringify(state));
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(saveToCloud,1000);
+}
+
 async function saveToCloud(){
   setSyncStatus('loading','Αποθήκευση...');
   try{
-    const s={...state, renamingList:null, addingList:false, editingId:null};
+    const s={...state,renamingList:null,addingList:false,editingId:null};
     await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(s),mode:'no-cors'});
-    localStorage.setItem('todo_backup',JSON.stringify(s));
     setSyncStatus('ok','Συγχρονισμένο ✓');
-  }catch(e){
-    setSyncStatus('err','Σφάλμα σύνδεσης');
-  }
-}
-
-function save(){
-  localStorage.setItem('todo_backup',JSON.stringify(state));
-  clearTimeout(saveTimeout);
-  saveTimeout=setTimeout(saveToCloud,800);
+  }catch(e){setSyncStatus('err','Σφάλμα αποθήκευσης');}
 }
 
 async function loadFromCloud(){
-  setSyncStatus('loading','Φόρτωση δεδομένων...');
+  setSyncStatus('loading','Φόρτωση...');
   try{
-    const resp=await fetch(SCRIPT_URL+'?t='+Date.now());
-    const text=await resp.text();
-    if(text&&text!=='{}'){
-      const data=JSON.parse(text);
-      if(data.lists&&data.tasks){
-        state={...state,...data,renamingList:null,addingList:false,editingId:null};
-        setSyncStatus('ok','Συγχρονισμένο ✓');
-        render();return;
-      }
+    const data=await jsonpLoad();
+    if(data&&data.lists&&data.tasks){
+      state={...state,...data,renamingList:null,addingList:false,editingId:null};
+      setSyncStatus('ok','Συγχρονισμένο ✓');
+    } else {
+      loadLocal();
     }
-    const backup=localStorage.getItem('todo_backup');
-    if(backup){state={...state,...JSON.parse(backup),renamingList:null,addingList:false,editingId:null};}
-    setSyncStatus('ok','Τοπικά δεδομένα');
-    render();
   }catch(e){
-    const backup=localStorage.getItem('todo_backup');
-    if(backup){state={...state,...JSON.parse(backup),renamingList:null,addingList:false,editingId:null};}
-    setSyncStatus('err','Offline — τοπικά δεδομένα');
-    render();
+    loadLocal();
   }
+  render();
+}
+
+function loadLocal(){
+  try{
+    const b=localStorage.getItem('todo_bk');
+    if(b){const d=JSON.parse(b);state={...state,...d,renamingList:null,addingList:false,editingId:null};}
+    setSyncStatus('err','Offline — τοπικά δεδομένα');
+  }catch(e){setSyncStatus('err','Σφάλμα φόρτωσης');}
 }
 
 function showToast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
@@ -275,13 +263,10 @@ function fmtDate(d){if(!d)return '';const[y,m,dd]=d.split('-');return dd+'/'+m+'
 function fmtTime(h,m){if(!h)return '';return h+':'+m;}
 
 function commitRename(old,nw){
-  nw=nw.trim();
-  if(!nw||nw===old){state.renamingList=null;render();return;}
+  nw=nw.trim();if(!nw||nw===old){state.renamingList=null;render();return;}
   if(state.lists.includes(nw)&&nw!==old){showToast('Υπάρχει ήδη!','err');state.renamingList=null;render();return;}
-  const i=state.lists.indexOf(old);
-  state.lists[i]=nw;state.tasks[nw]=state.tasks[old];delete state.tasks[old];
-  if(state.activeList===old)state.activeList=nw;
-  state.renamingList=null;save();render();
+  const i=state.lists.indexOf(old);state.lists[i]=nw;state.tasks[nw]=state.tasks[old];delete state.tasks[old];
+  if(state.activeList===old)state.activeList=nw;state.renamingList=null;save();render();
 }
 
 function renderLists(){
@@ -290,14 +275,12 @@ function renderLists(){
     if(state.renamingList===l){
       const inp=document.createElement('input');inp.className='list-rename-inp';inp.value=l;
       inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commitRename(l,inp.value);}if(e.key==='Escape'){state.renamingList=null;render();}};
-      inp.onblur=()=>commitRename(l,inp.value);
-      row.appendChild(inp);setTimeout(()=>{inp.focus();inp.select();},40);return;
+      inp.onblur=()=>commitRename(l,inp.value);row.appendChild(inp);setTimeout(()=>{inp.focus();inp.select();},40);return;
     }
     const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;align-items:center;gap:2px';
-    const b=document.createElement('button');
-    b.className='list-tab'+(l===state.activeList?' active':'');b.textContent=l;
+    const b=document.createElement('button');b.className='list-tab'+(l===state.activeList?' active':'');b.textContent=l;
     b.onclick=()=>{state.activeList=l;state.filter='all';save();render();};
-    const eb=document.createElement('button');eb.className='edit-pencil';eb.title='Μετονομασία';eb.textContent='✏️';
+    const eb=document.createElement('button');eb.className='edit-pencil';eb.textContent='✏️';eb.title='Μετονομασία';
     eb.onclick=e=>{e.stopPropagation();state.renamingList=l;render();};
     wrap.appendChild(b);wrap.appendChild(eb);row.appendChild(wrap);
   });
@@ -306,17 +289,15 @@ function renderLists(){
     inp.onkeydown=e=>{if(e.key==='Enter'){const v=inp.value.trim();if(v&&!state.lists.includes(v)){state.lists.push(v);state.tasks[v]=[];state.activeList=v;}state.addingList=false;save();render();}if(e.key==='Escape'){state.addingList=false;render();}};
     inp.onblur=()=>{state.addingList=false;render();};row.appendChild(inp);setTimeout(()=>inp.focus(),40);
   } else {
-    const ab=document.createElement('button');ab.className='list-tab add-list';ab.title='Νέα λίστα';ab.textContent='+';
+    const ab=document.createElement('button');ab.className='list-tab add-list';ab.textContent='+';ab.title='Νέα λίστα';
     ab.onclick=()=>{state.addingList=true;render();};row.appendChild(ab);
     if(state.lists.length>1){
-      const db=document.createElement('button');db.className='list-tab del-list';
-      db.textContent='🗑 '+state.activeList;
+      const db=document.createElement('button');db.className='list-tab del-list';db.textContent='🗑 '+state.activeList;
       db.onclick=()=>{if(!confirm('Διαγραφή "'+state.activeList+'";'))return;const i=state.lists.indexOf(state.activeList);delete state.tasks[state.activeList];state.lists.splice(i,1);state.activeList=state.lists[Math.max(0,i-1)];save();render();};
       row.appendChild(db);
     }
   }
 }
-
 function renderStats(){
   const tasks=state.tasks[state.activeList]||[];const done=tasks.filter(t=>t.done).length;
   document.getElementById('stats').innerHTML=`<div class="stat">Σύνολο: <span>${tasks.length}</span></div><div class="stat">Εκκρεμείς: <span>${tasks.length-done}</span></div><div class="stat">Ολοκληρωμένες: <span>${done}</span></div><div class="stat">Με ημ/νία: <span>${tasks.filter(t=>t.date).length}</span></div>`;
@@ -336,17 +317,14 @@ function renderSort(){
   sd.onclick=()=>{if(state.sort==='date')state.sortDir*=-1;else{state.sort='date';state.sortDir=1;}render();};
   sp.onclick=()=>{if(state.sort==='prio')state.sortDir*=-1;else{state.sort='prio';state.sortDir=1;}render();};
 }
-
 function makeEditPanel(task){
   const panel=document.createElement('div');panel.className='edit-panel';
   function makeTG(hv,mv){
     const g=document.createElement('div');g.className='time-group';
-    const hs=document.createElement('select');hs.className='etsel';
-    hs.innerHTML='<option value="">--</option>';
+    const hs=document.createElement('select');hs.className='etsel';hs.innerHTML='<option value="">--</option>';
     for(let h=0;h<24;h++){const o=document.createElement('option');o.value=pad(h);o.textContent=pad(h);if(pad(h)===hv)o.selected=true;hs.appendChild(o);}
     const sep=document.createElement('span');sep.className='time-sep';sep.textContent=':';
-    const ms=document.createElement('select');ms.className='etsel';
-    ms.innerHTML='<option value="">--</option>';
+    const ms=document.createElement('select');ms.className='etsel';ms.innerHTML='<option value="">--</option>';
     for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=pad(m);o.textContent=pad(m);if(pad(m)===mv)o.selected=true;ms.appendChild(o);}
     g.appendChild(hs);g.appendChild(sep);g.appendChild(ms);g._h=hs;g._m=ms;return g;
   }
@@ -354,40 +332,33 @@ function makeEditPanel(task){
   const l1=document.createElement('span');l1.className='edit-label';l1.textContent='Τίτλος';
   const ti=document.createElement('input');ti.className='edit-inp';ti.value=task.text;
   r1.appendChild(l1);r1.appendChild(ti);
-
   const r2=document.createElement('div');r2.className='edit-row';
   const l2=document.createElement('span');l2.className='edit-label';l2.textContent='Ημ/νία';
   const di=document.createElement('input');di.type='date';di.className='edit-inp';di.style.cssText='width:145px;flex:none';di.value=task.date||'';
   const adw=document.createElement('div');adw.className='allday-wrap';
   const adc=document.createElement('input');adc.type='checkbox';adc.checked=!!task.allDay;
-  const adl=document.createElement('label');adl.textContent=' Ολοήμερο';
-  adw.appendChild(adc);adw.appendChild(adl);
+  const adl=document.createElement('label');adl.textContent=' Ολοήμερο';adw.appendChild(adc);adw.appendChild(adl);
   r2.appendChild(l2);r2.appendChild(di);r2.appendChild(adw);
-
   const r3=document.createElement('div');r3.className='edit-row';
   const l3=document.createElement('span');l3.className='edit-label';l3.textContent='Ώρα';
-  const tsg=makeTG(task.tsH||'',task.tsM||'');
-  const sep2=document.createElement('span');sep2.className='time-sep';sep2.textContent='–';
+  const tsg=makeTG(task.tsH||'',task.tsM||'');const sep2=document.createElement('span');sep2.className='time-sep';sep2.textContent='–';
   const teg=makeTG(task.teH||'',task.teM||'');
   const psel=document.createElement('select');psel.className='esel';
   [{v:'low',t:'🟢 Χαμηλή'},{v:'med',t:'🟡 Μέτρια'},{v:'high',t:'🔴 Υψηλή'}].forEach(p=>{
     const o=document.createElement('option');o.value=p.v;o.textContent=p.t;if(p.v===task.prio)o.selected=true;psel.appendChild(o);
   });
   r3.appendChild(l3);r3.appendChild(tsg);r3.appendChild(sep2);r3.appendChild(teg);r3.appendChild(psel);
-
   const r4=document.createElement('div');r4.className='edit-row';r4.style.alignItems='flex-start';
   const l4=document.createElement('span');l4.className='edit-label';l4.style.paddingTop='8px';l4.textContent='Παρατηρήσεις';
   const ni=document.createElement('textarea');ni.className='notes-inp';ni.placeholder='Παρατηρήσεις...';ni.value=task.notes||'';
   r4.appendChild(l4);r4.appendChild(ni);
-
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
   saveB.onclick=()=>{
     const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
     t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
     t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
-    t.prio=psel.value;t.notes=ni.value.trim();
-    state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
+    t.prio=psel.value;t.notes=ni.value.trim();state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
   canB.onclick=()=>{state.editingId=null;render();};
@@ -395,10 +366,8 @@ function makeEditPanel(task){
   panel.appendChild(r1);panel.appendChild(r2);panel.appendChild(r3);panel.appendChild(r4);panel.appendChild(r5);
   return panel;
 }
-
 function renderTasks(){
-  const list=document.getElementById('tasks-list');
-  const tasks=getFiltered();list.innerHTML='';
+  const list=document.getElementById('tasks-list');const tasks=getFiltered();list.innerHTML='';
   if(!tasks.length){list.innerHTML='<div class="empty">Καμία εργασία εδώ.</div>';return;}
   tasks.forEach(task=>{
     const item=document.createElement('div');item.className='task-item'+(task.done?' done':'');
@@ -406,59 +375,43 @@ function renderTasks(){
     const cb=document.createElement('div');cb.className='cb'+(task.done?' checked':'');cb.onclick=()=>{task.done=!task.done;save();render();};
     const dot=document.createElement('div');dot.className='pdot p-'+task.prio;
     const main=document.createElement('div');main.className='task-main';
-    const txt=document.createElement('div');txt.className='task-text';txt.textContent=task.text;
-    main.appendChild(txt);
+    const txt=document.createElement('div');txt.className='task-text';txt.textContent=task.text;main.appendChild(txt);
     if(task.date||task.tsH){
       const meta=document.createElement('div');meta.className='task-meta';
       if(task.date){const s=document.createElement('span');s.className='meta-date';s.textContent='📅 '+fmtDate(task.date)+(task.allDay?' · Ολοήμερο':'');meta.appendChild(s);}
       if(!task.allDay&&task.tsH){const s=document.createElement('span');s.className='meta-time';const te=task.teH?fmtTime(task.teH,task.teM):'';s.textContent='🕐 '+fmtTime(task.tsH,task.tsM)+(te?' – '+te:'');meta.appendChild(s);}
       main.appendChild(meta);
     }
-    if(task.notes&&state.editingId!==task.id){
-      const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);
-    }
+    if(task.notes&&state.editingId!==task.id){const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);}
     const actions=document.createElement('div');actions.className='task-actions';
-    const editBtn=document.createElement('button');
-    editBtn.className='edit-btn'+(state.editingId===task.id?' active':'');
-    editBtn.textContent='✏️ Επεξεργασία';
-    editBtn.onclick=()=>{state.editingId=state.editingId===task.id?null:task.id;render();};
-    const delBtn=document.createElement('button');delBtn.className='del-btn';
-    delBtn.textContent='🗑 Διαγραφή';
+    const editBtn=document.createElement('button');editBtn.className='edit-btn'+(state.editingId===task.id?' active':'');
+    editBtn.textContent='✏️ Επεξεργασία';editBtn.onclick=()=>{state.editingId=state.editingId===task.id?null:task.id;render();};
+    const delBtn=document.createElement('button');delBtn.className='del-btn';delBtn.textContent='🗑 Διαγραφή';
     delBtn.onclick=()=>{
       if(confirm('Διαγραφή: "'+task.text+'"?')){
         const all=state.tasks[state.activeList];const i=all.findIndex(t=>t.id===task.id);if(i>-1)all.splice(i,1);
-        if(state.editingId===task.id)state.editingId=null;
-        save();render();showToast('Διαγράφηκε.');
+        if(state.editingId===task.id)state.editingId=null;save();render();showToast('Διαγράφηκε.');
       }
     };
     actions.appendChild(editBtn);actions.appendChild(delBtn);
     top.appendChild(cb);top.appendChild(dot);top.appendChild(main);top.appendChild(actions);
-    item.appendChild(top);
-    if(state.editingId===task.id) item.appendChild(makeEditPanel(task));
+    item.appendChild(top);if(state.editingId===task.id)item.appendChild(makeEditPanel(task));
     list.appendChild(item);
   });
 }
-
 function render(){renderLists();renderStats();renderFilters();renderSort();renderTasks();}
-
 document.getElementById('add-btn').onclick=addTask;
 document.getElementById('inp-task').onkeydown=e=>{if(e.key==='Enter')addTask();};
-
 function addTask(){
   const txt=document.getElementById('inp-task').value.trim();if(!txt)return;
-  const date=document.getElementById('inp-date').value||'';
-  const allDay=document.getElementById('chk-allday').checked;
-  const tsH=(!allDay&&document.getElementById('ts-h').value)||'';
-  const tsM=(!allDay&&document.getElementById('ts-m').value)||'';
-  const teH=(!allDay&&document.getElementById('te-h').value)||'';
-  const teM=(!allDay&&document.getElementById('te-m').value)||'';
+  const date=document.getElementById('inp-date').value||'';const allDay=document.getElementById('chk-allday').checked;
+  const tsH=(!allDay&&document.getElementById('ts-h').value)||'';const tsM=(!allDay&&document.getElementById('ts-m').value)||'';
+  const teH=(!allDay&&document.getElementById('te-h').value)||'';const teM=(!allDay&&document.getElementById('te-m').value)||'';
   const prio=document.getElementById('sel-prio').value;
   if(!state.tasks[state.activeList])state.tasks[state.activeList]=[];
   state.tasks[state.activeList].unshift({text:txt,prio,done:false,date,allDay,tsH,tsM,teH,teM,notes:'',id:Date.now()});
-  document.getElementById('inp-task').value='';
-  clearDT();state.filter='all';save();render();
+  document.getElementById('inp-task').value='';clearDT();state.filter='all';save();render();
 }
-
 loadFromCloud();
 </script>
 </body>
