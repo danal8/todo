@@ -237,7 +237,7 @@ async function loadFromCloud(){
     const raw=await supaGet();
     if(raw){
       const data=JSON.parse(raw);
-      if(data&&data.lists&&data.tasks){
+      const parsed=typeof data==="string"?JSON.parse(data):data; if(parsed&&parsed.lists&&parsed.tasks){data=parsed;
         state={...state,...data,renamingList:null,addingList:false,editingId:null};
         setSyncStatus('ok','Συγχρονισμένο ✓');
         render();return;
