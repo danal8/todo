@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To-Do Lists</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;padding:1.5rem;min-height:100vh}
+h1{font-size:22px;font-weight:500;color:#fff;margin-bottom:1.25rem;display:flex;align-items:center;gap:10px}
+.sync-bar{display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:8px 14px;margin-bottom:1.25rem;font-size:12px;color:#888}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:#4ade80}
+.sync-dot.err{background:#e74c3c}
+.sync-dot.loading{background:#f0c040;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.lists-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
+.list-tab{padding:5px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;font-size:13px;transition:all .15s}
+.list-tab.active{background:#fff;color:#000;border-color:#fff}
+.list-tab:hover:not(.active){border-color:#aaa}
+.list-tab.add-list{border-style:dashed;font-size:18px;padding:2px 14px;color:#aaa}
+.list-tab.add-list:hover{color:#fff;border-color:#fff}
+.list-tab.del-list{color:#e74c3c;border-color:#e74c3c;font-size:12px}
+.list-tab.del-list:hover{background:#e74c3c;color:#fff}
+.list-rename-inp{background:#222;border:1px solid #777;border-radius:20px;padding:4px 12px;color:#fff;font-size:13px;outline:none;width:120px}
+.edit-pencil{background:transparent;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:#aaa;border-radius:4px}
+.edit-pencil:hover{color:#fff}
+.add-panel{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:14px;margin-bottom:1.25rem}
+.row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.row:last-child{margin-bottom:0}
+.inp{background:#111;border:1px solid #444;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none;flex:1;min-width:0}
+.inp:focus{border-color:#888}
+.inp::placeholder{color:#777}
+.inp-date{width:145px;flex:none;color:#fff}
+.tsel{background:#111;border:1px solid #444;border-radius:8px;padding:8px 6px;color:#fff;font-size:14px;outline:none;cursor:pointer;width:66px;flex:none;text-align:center}
+.tsel option{background:#1a1a1a;color:#fff}
+.sel{background:#111;border:1px solid #444;border-radius:8px;padding:9px 10px;color:#fff;font-size:13px;outline:none;cursor:pointer}
+.sel option{background:#1a1a1a;color:#fff}
+.add-btn{background:#fff;color:#000;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.add-btn:hover{background:#ddd}
+.clear-btn{background:transparent;border:1px solid #666;border-radius:8px;padding:9px 14px;font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.clear-btn:hover{border-color:#aaa}
+.allday-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.allday-wrap input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#000;border:2px solid #fff}
+.allday-wrap label{font-size:13px;color:#fff;cursor:pointer}
+.time-sep{color:#888;font-size:13px;flex-shrink:0}
+.time-group{display:flex;align-items:center;gap:4px}
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;font-size:12px;transition:all .15s}
+.filter-btn.active{background:#333;color:#fff;border-color:#666}
+.filter-btn:hover:not(.active){color:#fff;border-color:#555}
+.sort-row{display:flex;gap:6px}
+.sort-btn{padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;font-size:12px;transition:all .15s}
+.sort-btn.active{background:#1a1a1a;color:#4a9eff;border-color:#1e4d7a}
+.sort-btn:hover:not(.active){color:#fff}
+.stats{display:flex;gap:14px;margin-bottom:.75rem;flex-wrap:wrap}
+.stat{font-size:12px;color:#888}
+.stat span{color:#ccc;font-weight:500}
+.tasks-list{display:flex;flex-direction:column;gap:6px}
+.task-item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;transition:border-color .15s}
+.task-item:hover{border-color:#444}
+.task-item.done{opacity:1}
+.task-top{display:flex;align-items:flex-start;gap:10px}
+.task-main{flex:1;min-width:0}
+.cb{width:18px;height:18px;border-radius:50%;border:2px solid #666;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
+.cb.checked{background:#fff;border-color:#fff}
+.cb.checked::after{content:'✓';font-size:11px;color:#000;font-weight:700}
+.task-text{font-size:14px;color:#fff;word-break:break-word;font-weight:500;overflow-wrap:break-word;min-width:0}
+.task-item.done .task-text{color:#fff}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.p-high{background:#e74c3c}
+.p-med{background:#f39c12}
+.p-low{background:#2ecc71}
+.task-meta{font-size:11px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+.meta-date{color:#4a9eff}
+.meta-time{color:#ccc}
+.task-notes{font-size:13px;color:#ccc;margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-word;border-left:2px solid #333;padding-left:8px}
+.completed-date{font-size:11px;color:#4ade80;margin-top:4px;display:flex;align-items:center;gap:4px}
+.task-actions{display:flex;gap:5px;flex-shrink:0;align-items:center;margin-top:1px}
+.edit-btn{background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:6px 8px;color:#fff;cursor:pointer;font-size:15px;line-height:1;white-space:nowrap;min-width:32px;text-align:center}
+.edit-btn:hover{background:#3a3a3a}
+.edit-btn.active{background:#1e3a5f;border-color:#1e4d7a;color:#4a9eff}
+.del-btn{background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:6px 8px;color:#e74c3c;cursor:pointer;font-size:15px;line-height:1;white-space:nowrap;min-width:32px;text-align:center}
+.del-btn:hover{background:#5a1a1a}
+.edit-panel{background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.edit-label{font-size:12px;color:#aaa;width:90px;flex-shrink:0}
+.edit-inp{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;flex:1;min-width:0}
+.etsel{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 6px;color:#fff;font-size:13px;outline:none;cursor:pointer;width:64px;text-align:center}
+.etsel option{background:#1a1a1a;color:#fff}
+.esel{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;cursor:pointer}
+.esel option{background:#1a1a1a;color:#fff}
+.notes-inp{background:#0d0d0d;border:1px solid #444;border-radius:6px;padding:7px 10px;color:#fff;font-size:13px;outline:none;width:100%;resize:vertical;min-height:60px;font-family:Arial,sans-serif}
+.notes-inp::placeholder{color:#666}
+.save-btn{background:#fff;color:#000;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer}
+.save-btn:hover{background:#ddd}
+.cancel-btn{background:transparent;border:1px solid #555;border-radius:6px;padding:7px 14px;font-size:13px;color:#fff;cursor:pointer}
+.cancel-btn:hover{border-color:#aaa}
+.empty{text-align:center;padding:2.5rem;color:#555;font-size:14px}
+.new-list-inp{background:#1a1a1a;border:1px solid #777;border-radius:20px;padding:5px 14px;color:#fff;font-size:13px;outline:none;width:130px}
+.new-list-inp::placeholder{color:#777}
+.toast{position:fixed;top:1rem;right:1rem;background:#1a3a5c;color:#4a9eff;border:1px solid #1e4d7a;border-radius:8px;padding:10px 16px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px;z-index:9999}
+.toast.show{opacity:1}
+.toast.err{background:#3a1a1a;color:#e74c3c;border-color:#7a1e1e}
+.toast.ok{background:#1a3a1a;color:#4ade80;border-color:#2d6b2d}
+input[type=date]{color-scheme:dark}
+
+/* ── Floating Notes ───────────────────────────────────── */
+.notes-fab{position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;border-radius:50%;background:#fff;color:#000;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.notes-fab:hover{transform:scale(1.08)}
+.notes-fab .badge{position:absolute;top:-4px;right:-4px;background:#4a9eff;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;display:none}
+.notes-popup{position:fixed;bottom:5rem;right:1.5rem;width:460px;max-width:calc(100vw - 2rem);height:420px;background:#111;border:1px solid #333;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.8);z-index:9000;display:none;flex-direction:row;overflow:hidden}
+.notes-popup.open{display:flex}
+.notes-sidebar{width:150px;min-width:150px;background:#0d0d0d;border-right:1px solid #222;display:flex;flex-direction:column;overflow:hidden}
+.notes-sidebar-header{padding:10px 10px 8px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between}
+.notes-sidebar-title{font-size:12px;color:#888;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.notes-add-btn{background:transparent;border:1px solid #444;border-radius:6px;color:#aaa;font-size:16px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.notes-add-btn:hover{border-color:#fff;color:#fff}
+.notes-list{flex:1;overflow-y:auto;padding:6px}
+.notes-list::-webkit-scrollbar{width:4px}.notes-list::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.note-item{padding:7px 8px;border-radius:7px;cursor:pointer;margin-bottom:3px;border:1px solid transparent;transition:all .12s}
+.note-item:hover{background:#1a1a1a;border-color:#333}
+.note-item.active{background:#1a1a1a;border-color:#4a9eff}
+.note-item-title{font-size:12px;color:#ccc;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note-item-date{font-size:10px;color:#555;margin-top:2px}
+.notes-del-btn{background:transparent;border:none;color:#555;cursor:pointer;font-size:12px;float:right;padding:0 2px;line-height:1}
+.notes-del-btn:hover{color:#e74c3c}
+.notes-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.notes-main-header{padding:10px 12px 8px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px}
+.notes-title-inp{background:transparent;border:none;color:#fff;font-size:14px;font-weight:500;outline:none;flex:1;min-width:0}
+.notes-title-inp::placeholder{color:#555}
+.notes-close-btn{background:transparent;border:none;color:#666;cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
+.notes-close-btn:hover{color:#fff}
+.notes-body{flex:1;padding:10px 12px;overflow:hidden}
+.notes-textarea{width:100%;height:100%;background:transparent;border:none;color:#ddd;font-size:13px;font-family:Arial,sans-serif;resize:none;outline:none;line-height:1.6}
+.notes-textarea::placeholder{color:#444}
+.notes-footer{padding:6px 12px;border-top:1px solid #1a1a1a;font-size:11px;color:#444;text-align:right}
+</style>
+</head>
+<body>
+<div id="app" style="max-width:1200px;margin:0 auto">
+<h1>✅ To-Do Lists</h1>
+<div class="sync-bar">
+  <div class="sync-dot loading" id="sync-dot"></div>
+  <span id="sync-label">Σύνδεση...</span>
+</div>
+
+<div class="lists-row" id="lists-row"></div>
+<div class="add-panel">
+  <div class="row">
+    <input id="inp-task" class="inp" type="text" placeholder="Νέα εργασία..." />
+    <select class="sel" id="sel-prio">
+      <option value="low">🟢 Χαμηλή</option>
+      <option value="med" selected>🟡 Μέτρια</option>
+      <option value="high">🔴 Υψηλή</option>
+    </select>
+  </div>
+  <div class="row">
+    <span style="color:#aaa;font-size:13px">📅</span>
+    <input id="inp-date" class="inp inp-date" type="date" />
+    <span id="time-wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="color:#aaa;font-size:13px">🕐</span>
+      <div class="time-group"><select class="tsel" id="ts-h"></select><span class="time-sep">:</span><select class="tsel" id="ts-m"></select></div>
+      <span class="time-sep">–</span>
+      <div class="time-group"><select class="tsel" id="te-h"></select><span class="time-sep">:</span><select class="tsel" id="te-m"></select></div>
+    </span>
+    <div class="allday-wrap"><input type="checkbox" id="chk-allday"/><label for="chk-allday">Ολοήμερο</label></div>
+    <button class="clear-btn" id="clear-btn">✕ Clear</button>
+    <button class="add-btn" id="add-btn">+ Προσθήκη</button>
+  </div>
+</div>
+<div class="stats" id="stats"></div>
+<div class="toolbar">
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="active">Εκκρεμείς</button>
+    <button class="filter-btn" data-filter="done">Ολοκληρωμένες</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex:1;max-width:320px">
+    <input id="search-inp" class="inp" type="text" placeholder="🔍 Αναζήτηση..." style="padding:5px 10px;font-size:13px;height:32px" oninput="render()" />
+  </div>
+  <div class="sort-row">
+    <button class="sort-btn" id="sort-date">📅 Ημ/νία</button>
+    <button class="sort-btn" id="sort-prio">🚩 Προτεραιότητα</button>
+  </div>
+</div>
+<div class="tasks-list" id="tasks-list"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
+const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
+const ROW_ID=1;
+
+async function supaGet(){
+  const r=await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.'+ROW_ID+'&select=data',{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  });
+  const j=await r.json();
+  return j&&j.length>0?j[0].data:null;
+}
+
+async function supaSet(data){
+  const r=await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.'+ROW_ID,{
+    method:'PATCH',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({data:data})
+  });
+  if(!r.ok){
+    await fetch(SUPA_URL+'/rest/v1/tododata',{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({id:ROW_ID,data:data})
+    });
+  }
+}
+
+function pad(n){return String(n).padStart(2,'0');}
+function buildTS(hId,mId){
+  const hs=document.getElementById(hId),ms=document.getElementById(mId);
+  hs.innerHTML='<option value="">--</option>';
+  for(let h=0;h<24;h++){const o=document.createElement('option');o.value=pad(h);o.textContent=pad(h);hs.appendChild(o);}
+  ms.innerHTML='<option value="">--</option>';
+  for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=pad(m);o.textContent=pad(m);ms.appendChild(o);}
+}
+buildTS('ts-h','ts-m');buildTS('te-h','te-m');
+function clearDT(){
+  document.getElementById('inp-date').value='';
+  ['ts-h','ts-m','te-h','te-m'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('chk-allday').checked=false;
+  const w=document.getElementById('time-wrap');w.style.opacity='1';w.style.pointerEvents='auto';
+}
+document.getElementById('chk-allday').onchange=function(){
+  const w=document.getElementById('time-wrap');
+  w.style.opacity=this.checked?'0.3':'1';w.style.pointerEvents=this.checked?'none':'auto';
+};
+document.getElementById('clear-btn').onclick=clearDT;
+
+let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'active',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
+
+function setSyncStatus(status,msg){
+  document.getElementById('sync-dot').className='sync-dot '+status;
+  document.getElementById('sync-label').textContent=msg;
+}
+
+let saveTimeout=null;
+function save(){
+  localStorage.setItem('todo_bk',JSON.stringify(state));
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(saveToCloud,1000);
+}
+
+async function saveToCloud(){
+  setSyncStatus('loading','Αποθήκευση...');
+  try{
+    const s={...state,renamingList:null,addingList:false,editingId:null};
+    await supaSet(JSON.stringify(s));
+    setSyncStatus('ok','Συγχρονισμένο ✓');
+  }catch(e){
+    setSyncStatus('err','Σφάλμα αποθήκευσης');
+  }
+}
+
+async function loadFromCloud(){
+  setSyncStatus('loading','Φόρτωση...');
+  try{
+    const raw=await supaGet();
+    if(raw!==null){
+      let data=raw;
+      try{data=JSON.parse(raw);}catch(e){}
+      if(typeof data==='string'){try{data=JSON.parse(data);}catch(e){data={};}}
+      if(data&&data.lists&&data.tasks){
+        state={...state,...data,renamingList:null,addingList:false,editingId:null,filter:'active'};
+      }
+      setSyncStatus('ok','Συγχρονισμένο ✓');
+      render();return;
+    }
+    loadLocal();render();
+  }catch(e){
+    loadLocal();render();
+  }
+}
+
+function loadLocal(){
+  try{
+    const b=localStorage.getItem('todo_bk');
+    if(b){const d=JSON.parse(b);state={...state,...d,renamingList:null,addingList:false,editingId:null,filter:'active'};}
+    setSyncStatus('err','Offline — τοπικά δεδομένα');
+  }catch(e){setSyncStatus('err','Σφάλμα');}
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+const prioRank={high:0,med:1,low:2};
+function getSorted(tasks){
+  const t=[...tasks];
+  if(state.sort==='date') t.sort((a,b)=>{const da=a.date||'9999',db=b.date||'9999';return(da<db?-1:da>db?1:0)*state.sortDir;});
+  else if(state.sort==='prio') t.sort((a,b)=>(prioRank[a.prio]-prioRank[b.prio])*state.sortDir);
+  return t;
+}
+function getFiltered(){
+  const tasks=state.tasks[state.activeList]||[];const f=state.filter;
+  let out=f==='active'?tasks.filter(t=>!t.done):f==='done'?tasks.filter(t=>t.done):tasks.filter(t=>!t.done);
+  const q=(document.getElementById('search-inp')||{}).value||'';
+  if(q.trim()) out=out.filter(t=>t.text.toLowerCase().includes(q.trim().toLowerCase())||(t.notes||'').toLowerCase().includes(q.trim().toLowerCase()));
+  return getSorted(out);
+}
+function fmtDate(d){if(!d)return '';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y;}
+function fmtTime(h,m){if(!h)return '';return h+':'+m;}
+
+function commitRename(old,nw){
+  nw=nw.trim();if(!nw||nw===old){state.renamingList=null;render();return;}
+  if(state.lists.includes(nw)&&nw!==old){showToast('Υπάρχει ήδη!','err');state.renamingList=null;render();return;}
+  const i=state.lists.indexOf(old);state.lists[i]=nw;state.tasks[nw]=state.tasks[old];delete state.tasks[old];
+  if(state.activeList===old)state.activeList=nw;state.renamingList=null;save();render();
+}
+
+function renderLists(){
+  const row=document.getElementById('lists-row');row.innerHTML='';
+  state.lists.forEach(l=>{
+    if(state.renamingList===l){
+      const inp=document.createElement('input');inp.className='list-rename-inp';inp.value=l;
+      inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commitRename(l,inp.value);}if(e.key==='Escape'){state.renamingList=null;render();}};
+      inp.onblur=()=>commitRename(l,inp.value);row.appendChild(inp);setTimeout(()=>{inp.focus();inp.select();},40);return;
+    }
+    const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;align-items:center;gap:2px';
+    const b=document.createElement('button');b.className='list-tab'+(l===state.activeList?' active':'');b.textContent=l;
+    b.onclick=()=>{state.activeList=l;state.filter='all';save();render();};
+    const eb=document.createElement('button');eb.className='edit-pencil';eb.textContent='✏️';eb.title='Μετονομασία';
+    eb.onclick=e=>{e.stopPropagation();state.renamingList=l;render();};
+    wrap.appendChild(b);wrap.appendChild(eb);row.appendChild(wrap);
+  });
+  if(state.addingList){
+    const inp=document.createElement('input');inp.className='new-list-inp';inp.placeholder='Όνομα λίστας...';
+    inp.onkeydown=e=>{if(e.key==='Enter'){const v=inp.value.trim();if(v&&!state.lists.includes(v)){state.lists.push(v);state.tasks[v]=[];state.activeList=v;}state.addingList=false;save();render();}if(e.key==='Escape'){state.addingList=false;render();}};
+    inp.onblur=()=>{state.addingList=false;render();};row.appendChild(inp);setTimeout(()=>inp.focus(),40);
+  } else {
+    const ab=document.createElement('button');ab.className='list-tab add-list';ab.textContent='+';ab.title='Νέα λίστα';
+    ab.onclick=()=>{state.addingList=true;render();};row.appendChild(ab);
+    if(state.lists.length>1){
+      const db=document.createElement('button');db.className='list-tab del-list';db.textContent='🗑 '+state.activeList;
+      db.onclick=()=>{if(!confirm('Διαγραφή "'+state.activeList+'";'))return;const i=state.lists.indexOf(state.activeList);delete state.tasks[state.activeList];state.lists.splice(i,1);state.activeList=state.lists[Math.max(0,i-1)];save();render();};
+      row.appendChild(db);
+    }
+  }
+}
+function renderStats(){
+  const tasks=state.tasks[state.activeList]||[];const done=tasks.filter(t=>t.done).length;
+  document.getElementById('stats').innerHTML=`<div class="stat">Σύνολο: <span>${tasks.length}</span></div><div class="stat">Εκκρεμείς: <span>${tasks.length-done}</span></div><div class="stat">Ολοκληρωμένες: <span>${done}</span></div><div class="stat">Με ημ/νία: <span>${tasks.filter(t=>t.date).length}</span></div>`;
+}
+function renderFilters(){
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.filter===state.filter);
+    b.onclick=()=>{
+      state.filter=b.dataset.filter;
+      const si=document.getElementById('search-inp');if(si)si.value='';
+      render();
+    };
+  });
+}
+function renderSort(){
+  const sd=document.getElementById('sort-date'),sp=document.getElementById('sort-prio');
+  sd.classList.toggle('active',state.sort==='date');sp.classList.toggle('active',state.sort==='prio');
+  const arr=state.sortDir===1?' ↑':' ↓';
+  sd.textContent='📅 Ημ/νία'+(state.sort==='date'?arr:'');
+  sp.textContent='🚩 Προτεραιότητα'+(state.sort==='prio'?arr:'');
+  sd.onclick=()=>{if(state.sort==='date')state.sortDir*=-1;else{state.sort='date';state.sortDir=1;}render();};
+  sp.onclick=()=>{if(state.sort==='prio')state.sortDir*=-1;else{state.sort='prio';state.sortDir=1;}render();};
+}
+function makeEditPanel(task){
+  const panel=document.createElement('div');panel.className='edit-panel';
+  function makeTG(hv,mv){
+    const g=document.createElement('div');g.className='time-group';
+    const hs=document.createElement('select');hs.className='etsel';hs.innerHTML='<option value="">--</option>';
+    for(let h=0;h<24;h++){const o=document.createElement('option');o.value=pad(h);o.textContent=pad(h);if(pad(h)===hv)o.selected=true;hs.appendChild(o);}
+    const sep=document.createElement('span');sep.className='time-sep';sep.textContent=':';
+    const ms=document.createElement('select');ms.className='etsel';ms.innerHTML='<option value="">--</option>';
+    for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=pad(m);o.textContent=pad(m);if(pad(m)===mv)o.selected=true;ms.appendChild(o);}
+    g.appendChild(hs);g.appendChild(sep);g.appendChild(ms);g._h=hs;g._m=ms;return g;
+  }
+  const r1=document.createElement('div');r1.className='edit-row';
+  const l1=document.createElement('span');l1.className='edit-label';l1.textContent='Τίτλος';
+  const ti=document.createElement('input');ti.className='edit-inp';ti.value=task.text;
+  r1.appendChild(l1);r1.appendChild(ti);
+  const r2=document.createElement('div');r2.className='edit-row';
+  const l2=document.createElement('span');l2.className='edit-label';l2.textContent='Ημ/νία';
+  const di=document.createElement('input');di.type='date';di.className='edit-inp';di.style.cssText='width:145px;flex:none';di.value=task.date||'';
+  const adw=document.createElement('div');adw.className='allday-wrap';
+  const adc=document.createElement('input');adc.type='checkbox';adc.checked=!!task.allDay;
+  const adl=document.createElement('label');adl.textContent=' Ολοήμερο';adw.appendChild(adc);adw.appendChild(adl);
+  r2.appendChild(l2);r2.appendChild(di);r2.appendChild(adw);
+  const r3=document.createElement('div');r3.className='edit-row';
+  const l3=document.createElement('span');l3.className='edit-label';l3.textContent='Ώρα';
+  const tsg=makeTG(task.tsH||'',task.tsM||'');const sep2=document.createElement('span');sep2.className='time-sep';sep2.textContent='–';
+  const teg=makeTG(task.teH||'',task.teM||'');
+  const psel=document.createElement('select');psel.className='esel';
+  [{v:'low',t:'🟢 Χαμηλή'},{v:'med',t:'🟡 Μέτρια'},{v:'high',t:'🔴 Υψηλή'}].forEach(p=>{
+    const o=document.createElement('option');o.value=p.v;o.textContent=p.t;if(p.v===task.prio)o.selected=true;psel.appendChild(o);
+  });
+  r3.appendChild(l3);r3.appendChild(tsg);r3.appendChild(sep2);r3.appendChild(teg);r3.appendChild(psel);
+  const r4=document.createElement('div');r4.className='edit-row';r4.style.alignItems='flex-start';
+  const l4=document.createElement('span');l4.className='edit-label';l4.style.paddingTop='8px';l4.textContent='Παρατηρήσεις';
+  const ni=document.createElement('textarea');ni.className='notes-inp';ni.placeholder='Παρατηρήσεις...';ni.value=task.notes||'';
+  r4.appendChild(l4);r4.appendChild(ni);
+  const r5=document.createElement('div');r5.className='edit-row';
+  const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
+  saveB.onclick=()=>{
+    const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
+    t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
+    t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
+    t.prio=psel.value;t.notes=ni.value.trim();state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
+  };
+  const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
+  canB.onclick=()=>{state.editingId=null;render();};
+  r5.appendChild(saveB);r5.appendChild(canB);
+  panel.appendChild(r1);panel.appendChild(r2);panel.appendChild(r3);panel.appendChild(r4);panel.appendChild(r5);
+  return panel;
+}
+function renderTasks(){
+  const list=document.getElementById('tasks-list');const tasks=getFiltered();list.innerHTML='';
+  if(!tasks.length){list.innerHTML='<div class="empty">'+(state.filter==="done"?'Καμία ολοκληρωμένη εργασία.':'Καμία εκκρεμής εργασία.')+'</div>';return;}
+  tasks.forEach(task=>{
+    const item=document.createElement('div');item.className='task-item'+(task.done?' done':'');
+    const top=document.createElement('div');top.className='task-top';
+    const cb=document.createElement('div');cb.className='cb'+(task.done?' checked':'');cb.onclick=()=>{
+    task.done=!task.done;
+    if(task.done){
+      const now=new Date();
+      task.completedAt=now.toISOString();
+    } else {
+      delete task.completedAt;
+    }
+    save();render();
+  };
+    const dot=document.createElement('div');dot.className='pdot p-'+task.prio;
+    const main=document.createElement('div');main.className='task-main';
+    const txt=document.createElement('div');txt.className='task-text';txt.textContent=task.text;main.appendChild(txt);
+    if(task.date||task.tsH){
+      const meta=document.createElement('div');meta.className='task-meta';
+      if(task.date){const s=document.createElement('span');s.className='meta-date';s.textContent='📅 '+fmtDate(task.date)+(task.allDay?' · Ολοήμερο':'');meta.appendChild(s);}
+      if(!task.allDay&&task.tsH){const s=document.createElement('span');s.className='meta-time';const te=task.teH?fmtTime(task.teH,task.teM):'';s.textContent='🕐 '+fmtTime(task.tsH,task.tsM)+(te?' – '+te:'');meta.appendChild(s);}
+      main.appendChild(meta);
+    }
+    if(task.notes&&state.editingId!==task.id){const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);}
+    if(task.done&&task.completedAt&&state.editingId!==task.id){
+      const cd=document.createElement('div');cd.className='completed-date';
+      const dt=new Date(task.completedAt);
+      const str=pad(dt.getDate())+'/'+pad(dt.getMonth()+1)+'/'+dt.getFullYear()+' '+pad(dt.getHours())+':'+pad(dt.getMinutes());
+      cd.textContent='✅ Ολοκληρώθηκε: '+str;
+      main.appendChild(cd);
+    }
+    const actions=document.createElement('div');actions.className='task-actions';
+    const calBtn2=document.createElement('button');
+    calBtn2.style.cssText='background:'+(task.gcal?'#1a3a1a':'#1e3a5f')+';border:1px solid '+(task.gcal?'#2d6b2d':'#1e4d7a')+';border-radius:6px;padding:6px 8px;color:'+(task.gcal?'#4ade80':'#4a9eff')+';cursor:pointer;font-size:15px;line-height:1;min-width:32px;text-align:center';
+    calBtn2.textContent=task.gcal?'✓':'🗓';
+    calBtn2.title=task.gcal?'Έχει προστεθεί':'Προσθήκη στο Google Calendar';calBtn2.onclick=()=>{if(!task.gcal)addToCalendar(task,calBtn2);};
+    const editBtn=document.createElement('button');editBtn.className='edit-btn'+(state.editingId===task.id?' active':'');
+    editBtn.textContent='✏️';editBtn.title='Επεξεργασία';editBtn.onclick=()=>{state.editingId=state.editingId===task.id?null:task.id;render();};
+    const delBtn=document.createElement('button');delBtn.className='del-btn';delBtn.title='Διαγραφή';delBtn.textContent='🗑';
+    delBtn.onclick=()=>{
+      if(confirm('Διαγραφή: "'+task.text+'"?')){
+        const all=state.tasks[state.activeList];const i=all.findIndex(t=>t.id===task.id);if(i>-1)all.splice(i,1);
+        if(state.editingId===task.id)state.editingId=null;save();render();showToast('Διαγράφηκε.');
+      }
+    };
+    actions.appendChild(calBtn2);actions.appendChild(editBtn);actions.appendChild(delBtn);
+    top.appendChild(cb);top.appendChild(dot);top.appendChild(main);top.appendChild(actions);
+    item.appendChild(top);if(state.editingId===task.id)item.appendChild(makeEditPanel(task));
+    list.appendChild(item);
+  });
+}
+function render(){renderLists();renderStats();renderFilters();renderSort();renderTasks();}
+document.getElementById('add-btn').onclick=addTask;
+document.getElementById('inp-task').onkeydown=e=>{if(e.key==='Enter')addTask();};
+function addTask(){
+  const txt=document.getElementById('inp-task').value.trim();if(!txt)return;
+  const date=document.getElementById('inp-date').value||'';const allDay=document.getElementById('chk-allday').checked;
+  const tsH=(!allDay&&document.getElementById('ts-h').value)||'';const tsM=(!allDay&&document.getElementById('ts-m').value)||'';
+  const teH=(!allDay&&document.getElementById('te-h').value)||'';const teM=(!allDay&&document.getElementById('te-m').value)||'';
+  const prio=document.getElementById('sel-prio').value;
+  if(!state.tasks[state.activeList])state.tasks[state.activeList]=[];
+  state.tasks[state.activeList].unshift({text:txt,prio,done:false,date,allDay,tsH,tsM,teH,teM,notes:'',id:Date.now()});
+  document.getElementById('inp-task').value='';clearDT();state.filter='all';save();render();
+}
+function addToCalendar(task, btn){
+  if(!task.date){ showToast('Δεν έχει ημερομηνία!','err'); return; }
+  const tsH=task.tsH||'', tsM=task.tsM||'';
+  const teH=task.teH||'', teM=task.teM||'';
+  const notes=task.notes||'';
+  let url;
+  if(task.allDay){
+    const d=task.date.replace(/-/g,'');
+    // end date must be next day for all-day events
+    const nextDay=new Date(task.date);nextDay.setDate(nextDay.getDate()+1);
+    const nd=nextDay.toISOString().slice(0,10).replace(/-/g,'');
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +'&text='+encodeURIComponent(task.text)
+      +'&dates='+d+'/'+nd
+      +(notes?'&details='+encodeURIComponent(notes):'');
+  } else {
+    const d=task.date.replace(/-/g,'');
+    const sh=tsH||'09',sm=tsM||'00';
+    const eh=teH||(String(parseInt(sh)+1).padStart(2,'0')),em=teM||'00';
+    url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +'&text='+encodeURIComponent(task.text)
+      +'&dates='+d+'T'+sh+sm+'00/'+d+'T'+eh+em+'00'
+      +'&ctz=Europe/Athens'
+      +(notes?'&details='+encodeURIComponent(notes):'');
+  }
+  task.gcal=true;save();render();
+  window.open(url,'_blank');
+  showToast('Άνοιξε το Google Calendar — πάτα Save!','ok');
+}
+loadFromCloud();
+</script>
+
+<!-- Floating Notes -->
+<button class="notes-fab" id="notes-fab" title="Σημειωματάριο">📝<span class="badge" id="notes-badge"></span></button>
+<div class="notes-popup" id="notes-popup">
+  <div class="notes-sidebar">
+    <div class="notes-sidebar-header">
+      <span class="notes-sidebar-title">Σημειώσεις</span>
+      <button class="notes-add-btn" id="notes-add" title="Νέα σημείωση">+</button>
+    </div>
+    <div class="notes-list" id="notes-list"></div>
+  </div>
+  <div class="notes-main">
+    <div class="notes-main-header">
+      <input class="notes-title-inp" id="notes-title-inp" placeholder="Τίτλος σημείωσης..." />
+      <button class="notes-close-btn" id="notes-close">✕</button>
+    </div>
+    <div class="notes-body">
+      <textarea class="notes-textarea" id="notes-textarea" placeholder="Γράψε σημείωση..."></textarea>
+    </div>
+    <div class="notes-footer" id="notes-footer"></div>
+  </div>
+</div>
+
+<script>
+// ── Floating Notes ───────────────────────────────────────────────
+const NOTES_KEY = 'todo_notes_v1';
+let notesState = { notes: [], activeId: null, open: false };
+
+function notesLoad() {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      notesState.notes = d.notes || [];
+    }
+  } catch(e) {}
+  if (!notesState.notes.length) {
+    notesState.notes = [{ id: Date.now(), title: 'Πρώτη σημείωση', body: '', updatedAt: new Date().toISOString() }];
+  }
+  notesState.activeId = notesState.notes[0].id;
+}
+
+function notesSave() {
+  localStorage.setItem(NOTES_KEY, JSON.stringify({ notes: notesState.notes }));
+  // also push to Supabase notes table (best effort)
+  supaNotesSet(JSON.stringify(notesState.notes));
+}
+
+async function supaNotesSet(data) {
+  try {
+    const r = await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.99', {
+      method: 'PATCH',
+      headers: {'apikey': SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify({data: data})
+    });
+    if (!r.ok) {
+      await fetch(SUPA_URL+'/rest/v1/tododata', {
+        method: 'POST',
+        headers: {'apikey': SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body: JSON.stringify({id: 99, data: data})
+      });
+    }
+  } catch(e) {}
+}
+
+async function supaNotesLoad() {
+  try {
+    const r = await fetch(SUPA_URL+'/rest/v1/tododata?id=eq.99&select=data', {
+      headers: {'apikey': SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    const j = await r.json();
+    if (j && j.length > 0 && j[0].data) {
+      const d = JSON.parse(j[0].data);
+      if (Array.isArray(d) && d.length) {
+        notesState.notes = d;
+        notesState.activeId = d[0].id;
+        notesRender();
+      }
+    }
+  } catch(e) {}
+}
+
+function fmtNoteDate(iso) {
+  try {
+    const d = new Date(iso);
+    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  } catch(e) { return ''; }
+}
+
+function notesRender() {
+  const list = document.getElementById('notes-list');
+  list.innerHTML = '';
+  notesState.notes.forEach(n => {
+    const item = document.createElement('div');
+    item.className = 'note-item' + (n.id === notesState.activeId ? ' active' : '');
+    item.innerHTML = '<span class="notes-del-btn" data-id="'+n.id+'">✕</span><div class="note-item-title">'+(n.title||'Χωρίς τίτλο')+'</div><div class="note-item-date">'+fmtNoteDate(n.updatedAt)+'</div>';
+    item.onclick = (e) => {
+      if (e.target.classList.contains('notes-del-btn')) return;
+      notesFlush();
+      notesState.activeId = n.id;
+      notesRender();
+      notesLoadActive();
+    };
+    item.querySelector('.notes-del-btn').onclick = (e) => {
+      e.stopPropagation();
+      if (notesState.notes.length === 1) { showToast('Πρέπει να υπάρχει τουλάχιστον μία σημείωση.','err'); return; }
+      notesState.notes = notesState.notes.filter(x => x.id !== n.id);
+      if (notesState.activeId === n.id) notesState.activeId = notesState.notes[0].id;
+      notesSave(); notesRender(); notesLoadActive();
+    };
+    list.appendChild(item);
+  });
+  // badge
+  const badge = document.getElementById('notes-badge');
+  badge.textContent = notesState.notes.length;
+  badge.style.display = notesState.notes.length > 1 ? 'flex' : 'none';
+}
+
+function notesLoadActive() {
+  const n = notesState.notes.find(x => x.id === notesState.activeId);
+  const ti = document.getElementById('notes-title-inp');
+  const ta = document.getElementById('notes-textarea');
+  const ft = document.getElementById('notes-footer');
+  if (n) {
+    ti.value = n.title || '';
+    ta.value = n.body || '';
+    ft.textContent = n.updatedAt ? 'Τελευταία αποθήκευση: ' + fmtNoteDate(n.updatedAt) : '';
+  } else {
+    ti.value = ''; ta.value = ''; ft.textContent = '';
+  }
+}
+
+function notesFlush() {
+  const n = notesState.notes.find(x => x.id === notesState.activeId);
+  if (!n) return;
+  const ti = document.getElementById('notes-title-inp');
+  const ta = document.getElementById('notes-textarea');
+  n.title = ti.value.trim() || 'Χωρίς τίτλο';
+  n.body = ta.value;
+  n.updatedAt = new Date().toISOString();
+}
+
+let notesFlushTimer = null;
+function notesAutoSave() {
+  clearTimeout(notesFlushTimer);
+  notesFlushTimer = setTimeout(() => {
+    notesFlush();
+    notesSave();
+    notesRender();
+    notesLoadActive();
+  }, 800);
+}
+
+document.getElementById('notes-title-inp').oninput = notesAutoSave;
+document.getElementById('notes-textarea').oninput = notesAutoSave;
+
+document.getElementById('notes-fab').onclick = () => {
+  const popup = document.getElementById('notes-popup');
+  notesState.open = !notesState.open;
+  popup.classList.toggle('open', notesState.open);
+};
+document.getElementById('notes-close').onclick = () => {
+  notesFlush(); notesSave();
+  document.getElementById('notes-popup').classList.remove('open');
+  notesState.open = false;
+};
+document.getElementById('notes-add').onclick = () => {
+  notesFlush();
+  const n = { id: Date.now(), title: 'Νέα σημείωση', body: '', updatedAt: new Date().toISOString() };
+  notesState.notes.unshift(n);
+  notesState.activeId = n.id;
+  notesSave(); notesRender(); notesLoadActive();
+  setTimeout(() => document.getElementById('notes-title-inp').focus(), 50);
+};
+
+notesLoad();
+notesRender();
+notesLoadActive();
+supaNotesLoad();
+</script>
+
+</body>
+</html>
