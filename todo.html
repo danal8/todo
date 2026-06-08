@@ -949,12 +949,12 @@ document.getElementById('mkt-inp').addEventListener('keydown',e=>{
 });
 document.getElementById('mkt-copy').onclick=()=>{
   const lines=['🛒 Λίστα Αγορών',''];
-  mktState.items.filter(x=>!x.done).forEach(x=>lines.push('☐ '+(x.qty&&x.qty>1?x.qty+'x ':'')+x.text));
+  mktState.items.filter(x=>!x.done).forEach(x=>lines.push((x.qty&&x.qty>1?x.qty+'x ':'')+x.text));
   mktState.items.filter(x=>x.done).forEach(x=>lines.push('✓ '+x.text));
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Αντιγράφηκε!','ok'));
 };
 document.getElementById('mkt-clear').onclick=()=>{
-  mktState.items=mktState.items.filter(x=>!x.done);mktSave();mktRender();
+  mktState.items=[];mktSave();mktRender();
 };
 
 // Draggable market popup
