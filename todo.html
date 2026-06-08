@@ -243,6 +243,9 @@ input[type=date]{color-scheme:dark}
 <script>
 const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
 const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
+// Early declarations so renderLists() works before notes/market scripts load
+var notesState = { notes: [], activeId: null, open: false };
+var mktState = { items: [], presets: [], open: false, dragged: false };
 const ROW_ID=1;
 
 async function supaGet(){
@@ -606,7 +609,7 @@ loadFromCloud();
 <script>
 // ── Floating Notes ───────────────────────────────────────────────
 const NOTES_KEY = 'todo_notes_v1';
-let notesState = { notes: [], activeId: null, open: false };
+// notesState declared early above
 
 function notesLoad() {
   try {
@@ -804,7 +807,7 @@ supaNotesLoad();
 
 // ── Market ───────────────────────────────────────────────────────
 const MKT_KEY = 'todo_market_v1';
-let mktState = { items: [], presets: [], open: false, dragged: false };
+// mktState declared early above
 
 function mktLoad() {
   try {
