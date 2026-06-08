@@ -716,8 +716,10 @@ function notesRender() {
   });
   // badge
   const badge = document.getElementById('notes-badge');
-  badge.textContent = notesState.notes.length;
-  badge.style.display = notesState.notes.length > 1 ? 'flex' : 'none';
+  if(badge){
+    badge.textContent = notesState.notes.length;
+    badge.style.display = notesState.notes.length > 1 ? 'flex' : 'none';
+  }
 }
 
 function notesLoadActive() {
@@ -839,6 +841,7 @@ function mktSave() {
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function mktRender() {
+  // Presets
   const qEl=document.getElementById('mkt-quick');
   if(!qEl)return;
   qEl.innerHTML='';
@@ -860,12 +863,14 @@ function mktRender() {
     inp.onblur=commit;
   };
   qEl.appendChild(addBtn);
+
+  // List
   const listEl=document.getElementById('mkt-list');
   if(!listEl)return;
   listEl.innerHTML='';
-  if(!mktState.items.length){listEl.innerHTML='<div style="text-align:center;padding:2rem;color:#446666;font-size:13px">Άδεια λίστα</div>';return;}
   const unchecked=mktState.items.filter(x=>!x.done);
   const checked=mktState.items.filter(x=>x.done);
+  if(!mktState.items.length){listEl.innerHTML='<div style="text-align:center;padding:2rem;color:#446666;font-size:13px">Άδεια λίστα</div>';return;}
   [...unchecked,...checked].forEach(item=>{
     const idx=mktState.items.indexOf(item);
     const row=document.createElement('div');
@@ -893,12 +898,6 @@ function mktAddItem(text){
   mktSave();mktRender();
 }
 
-function mktClose(){
-  document.getElementById('market-popup').classList.remove('open');
-  mktState.open=false;
-  renderLists();
-}
-
 function mktToggle(){
   const popup=document.getElementById('market-popup');
   mktState.open=!mktState.open;
@@ -918,8 +917,10 @@ function mktToggle(){
   renderLists();
 }
 
-// Market popup buttons
-document.getElementById('market-close').onclick = mktClose;
+document.getElementById('market-close').onclick=()=>{
+  document.getElementById('market-popup').classList.remove('open');
+  mktState.open=false;renderLists();
+};
 document.getElementById('mkt-inp-btn').onclick=()=>{
   const inp=document.getElementById('mkt-inp');mktAddItem(inp.value);inp.value='';inp.focus();
 };
@@ -928,43 +929,43 @@ document.getElementById('mkt-inp').addEventListener('keydown',e=>{
 });
 document.getElementById('mkt-copy').onclick=()=>{
   const lines=['🛒 Λίστα Αγορών',''];
-  mktState.items.filter(x=>!x.done).forEach(x=>lines.push('\u2610 '+x.text));
-  mktState.items.filter(x=>x.done).forEach(x=>lines.push('\u2713 '+x.text));
+  mktState.items.filter(x=>!x.done).forEach(x=>lines.push('☐ '+x.text));
+  mktState.items.filter(x=>x.done).forEach(x=>lines.push('✓ '+x.text));
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Αντιγράφηκε!','ok'));
 };
 document.getElementById('mkt-clear').onclick=()=>{
   mktState.items=mktState.items.filter(x=>!x.done);mktSave();mktRender();
 };
 
-// Market drag - simple, no preventDefault
+// Draggable market popup
 (function(){
-  const popup = document.getElementById('market-popup');
-  const handle = document.getElementById('market-drag');
-  let active=false, startX=0, startY=0, startL=0, startT=0;
-  handle.addEventListener('mousedown', function(e){
-    if(e.button!==0)return;
+  let dragging=false,ox=0,oy=0;
+  document.addEventListener('mousedown',e=>{
+    const h=document.getElementById('market-drag');if(!h||!h.contains(e.target))return;
+    const popup=document.getElementById('market-popup');
     const r=popup.getBoundingClientRect();
-    startX=e.clientX; startY=e.clientY;
-    startL=r.left; startT=r.top;
-    active=true;
-    popup.style.transition='none';
-    document.body.style.userSelect='none';
+    ox=e.clientX-r.left;oy=e.clientY-r.top;dragging=true;mktState.dragged=true;
+    popup.style.transition='none';e.preventDefault();
   });
-  document.addEventListener('mousemove', function(e){
-    if(!active)return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    if(Math.abs(dx)>3||Math.abs(dy)>3) mktState.dragged=true;
-    let left=startL+dx, top=startT+dy;
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const popup=document.getElementById('market-popup');
+    let left=e.clientX-ox,top=e.clientY-oy;
     left=Math.max(0,Math.min(left,window.innerWidth-popup.offsetWidth));
     top=Math.max(0,Math.min(top,window.innerHeight-popup.offsetHeight));
-    popup.style.left=left+'px'; popup.style.top=top+'px';
-    popup.style.bottom=''; popup.style.right='';
+    popup.style.left=left+'px';popup.style.top=top+'px';
+    popup.style.bottom='';popup.style.right='';
   });
-  document.addEventListener('mouseup', function(){
-    active=false;
-    document.body.style.userSelect='';
-  });
+  document.addEventListener('mouseup',()=>{dragging=false;});
 })();
+
+// Copy note button
+document.getElementById('notes-copy-btn').onclick=()=>{
+  const n=notesState.notes.find(x=>x.id===notesState.activeId);
+  if(!n)return;
+  const text=(n.title?n.title+'\n\n':'')+n.body;
+  navigator.clipboard.writeText(text).then(()=>showToast('Σημείωση αντιγράφηκε!','ok'));
+};
 
 mktLoad();
 mktRender();
