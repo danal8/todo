@@ -110,7 +110,7 @@ input[type=date]{color-scheme:dark}
 .notes-fab{padding:5px 14px;border-radius:20px;border:1px solid #4db6ac;background:transparent;color:#4db6ac;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;position:relative}
 .notes-fab:hover,.notes-fab.active{background:#00897b;color:#fff;border-color:#00897b}
 .notes-fab .badge{background:#60a5fa;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center}
-.notes-popup{position:fixed;width:460px;max-width:calc(100vw - 2rem);height:420px;background:#243333;border:1px solid #2e4444;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.8);z-index:9000;display:none;flex-direction:row;overflow:hidden;cursor:default}
+.notes-popup{position:fixed;width:460px;max-width:calc(100vw - 2rem);height:420px;min-width:320px;min-height:280px;background:#243333;border:1px solid #2e4444;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.8);z-index:9000;display:none;flex-direction:row;overflow:hidden;cursor:default;resize:both}
 .notes-popup.open{display:flex}
 .notes-main-header{cursor:default}
 .notes-sidebar{width:150px;min-width:150px;background:#1a2828;border-right:1px solid #2e4444;display:flex;flex-direction:column;overflow:hidden}
@@ -142,7 +142,7 @@ input[type=date]{color-scheme:dark}
 /* ── Market Popup ─────────────────────────────────── */
 .market-fab{padding:5px 14px;border-radius:20px;border:1px solid #4db6ac;background:transparent;color:#4db6ac;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .market-fab:hover,.market-fab.active{background:#00897b;color:#fff;border-color:#00897b}
-.market-popup{position:fixed;width:360px;max-width:calc(100vw - 2rem);height:480px;background:#243333;border:1px solid #2e4444;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.8);z-index:9000;display:none;flex-direction:column;overflow:hidden}
+.market-popup{position:fixed;width:360px;max-width:calc(100vw - 2rem);height:480px;min-width:280px;min-height:320px;background:#243333;border:1px solid #2e4444;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.8);z-index:9000;display:none;flex-direction:column;overflow:hidden;resize:both}
 .market-popup.open{display:flex}
 .market-header{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #2e4444;background:#1a2828;flex-shrink:0;gap:8px}
 .market-drag{cursor:move;color:#446666;font-size:14px;user-select:none;flex-shrink:0}
