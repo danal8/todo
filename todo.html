@@ -188,6 +188,10 @@ input[type=date]{color-scheme:dark}
 /* copy btn in notes footer */
 .notes-copy-btn{background:transparent;border:none;color:#7ab8b8;font-size:11px;cursor:pointer;padding:0 6px}
 .notes-copy-btn:hover{color:#e0f0f0}
+.mkt-qty{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.mkt-qty-btn{background:#2e4444;border:1px solid #3a5555;border-radius:4px;color:#e0f0f0;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mkt-qty-btn:hover{background:#00897b;border-color:#00897b;color:#fff}
+.mkt-qty-num{font-size:12px;color:#e0f0f0;min-width:18px;text-align:center;font-weight:700}
 </style>
 </head>
 <body>
@@ -858,8 +862,9 @@ function mktRender() {
     const inp=document.createElement('input');inp.className='mkt-inp';inp.placeholder='Όνομα...';
     inp.style.cssText='width:80px;padding:3px 7px;font-size:12px;border-radius:12px';
     addBtn.replaceWith(inp);inp.focus();
-    const commit=()=>{const v=inp.value.trim();if(v){mktState.presets.push(v);mktSave();}mktRender();};
-    inp.onkeydown=e=>{if(e.key==='Enter')commit();if(e.key==='Escape')mktRender();};
+    let committed=false;
+    const commit=()=>{if(committed)return;committed=true;const v=inp.value.trim();if(v&&!mktState.presets.includes(v)){mktState.presets.push(v);mktSave();}mktRender();};
+    inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){committed=true;mktRender();}};
     inp.onblur=commit;
   };
   qEl.appendChild(addBtn);
@@ -875,11 +880,24 @@ function mktRender() {
     const idx=mktState.items.indexOf(item);
     const row=document.createElement('div');
     row.className='mkt-item'+(item.done?' is-done':'');
-    row.innerHTML='<div class="mkt-cb'+(item.done?' done':'')+'"></div><span class="mkt-text">'+escHtml(item.text)+'</span><button class="mkt-del">✕</button>';
+    const cb=document.createElement('div');cb.className='mkt-cb'+(item.done?' done':'');
+    const txt=document.createElement('span');txt.className='mkt-text';txt.textContent=item.text;
+    const del=document.createElement('button');del.className='mkt-del';del.textContent='✕';
     const toggle=()=>{mktState.items[idx].done=!mktState.items[idx].done;mktSave();mktRender();};
-    row.querySelector('.mkt-cb').onclick=toggle;
-    row.querySelector('.mkt-text').onclick=toggle;
-    row.querySelector('.mkt-del').onclick=(e)=>{e.stopPropagation();mktState.items.splice(idx,1);mktSave();mktRender();};
+    cb.onclick=toggle; txt.onclick=toggle;
+    del.onclick=(e)=>{e.stopPropagation();mktState.items.splice(idx,1);mktSave();mktRender();};
+    row.appendChild(cb); row.appendChild(txt);
+    if(!item.done){
+      const qty=document.createElement('div');qty.className='mkt-qty';
+      const qm=document.createElement('button');qm.className='mkt-qty-btn';qm.textContent='−';
+      qm.onclick=(e)=>{e.stopPropagation();if((item.qty||1)<=1){mktState.items.splice(idx,1);}else{item.qty=(item.qty||1)-1;}mktSave();mktRender();};
+      const qn=document.createElement('span');qn.className='mkt-qty-num';qn.textContent=item.qty||1;
+      const qp=document.createElement('button');qp.className='mkt-qty-btn';qp.textContent='+';
+      qp.onclick=(e)=>{e.stopPropagation();item.qty=(item.qty||1)+1;mktSave();mktRender();};
+      qty.appendChild(qm);qty.appendChild(qn);qty.appendChild(qp);
+      row.appendChild(qty);
+    }
+    row.appendChild(del);
     listEl.appendChild(row);
   });
 }
@@ -894,7 +912,9 @@ function mktEditPreset(chip,i,oldVal){
 
 function mktAddItem(text){
   if(!text.trim())return;
-  mktState.items.unshift({text:text.trim(),done:false});
+  const existing=mktState.items.find(x=>x.text.toLowerCase()===text.trim().toLowerCase()&&!x.done);
+  if(existing){existing.qty=(existing.qty||1)+1;mktSave();mktRender();return;}
+  mktState.items.unshift({text:text.trim(),done:false,qty:1});
   mktSave();mktRender();
 }
 
@@ -929,7 +949,7 @@ document.getElementById('mkt-inp').addEventListener('keydown',e=>{
 });
 document.getElementById('mkt-copy').onclick=()=>{
   const lines=['🛒 Λίστα Αγορών',''];
-  mktState.items.filter(x=>!x.done).forEach(x=>lines.push('☐ '+x.text));
+  mktState.items.filter(x=>!x.done).forEach(x=>lines.push('☐ '+(x.qty&&x.qty>1?x.qty+'x ':'')+x.text));
   mktState.items.filter(x=>x.done).forEach(x=>lines.push('✓ '+x.text));
   navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('Αντιγράφηκε!','ok'));
 };
