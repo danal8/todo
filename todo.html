@@ -584,6 +584,24 @@ function addToCalendar(task, btn){
 loadFromCloud();
 </script>
 
+<!-- Market Popup -->
+<div class="market-popup" id="market-popup">
+  <div class="market-header">
+    <span class="market-drag" id="market-drag">⠿</span>
+    <span class="market-title">🛒 Λίστα Αγορών</span>
+    <button class="market-close" id="market-close">✕</button>
+  </div>
+  <div class="mkt-quick" id="mkt-quick"></div>
+  <div class="mkt-inp-row">
+    <input class="mkt-inp" id="mkt-inp" placeholder="Προσθήκη προϊόντος..." />
+    <button class="mkt-inp-btn" id="mkt-inp-btn">+</button>
+  </div>
+  <div class="mkt-list" id="mkt-list"></div>
+  <div class="mkt-footer">
+    <button class="mkt-copy-btn" id="mkt-copy">📋 Αντιγραφή για WhatsApp</button>
+    <button class="mkt-clear-btn" id="mkt-clear">🗑 Καθαρισμός</button>
+  </div>
+</div>
 <!-- Floating Notes -->
 <div class="notes-popup" id="notes-popup">
   <div class="notes-sidebar">
@@ -953,23 +971,5 @@ mktRender();
 </script>
 
 
-<!-- Market Popup -->
-<div class="market-popup" id="market-popup">
-  <div class="market-header">
-    <span class="market-drag" id="market-drag">⠿</span>
-    <span class="market-title">🛒 Λίστα Αγορών</span>
-    <button class="market-close" id="market-close">✕</button>
-  </div>
-  <div class="mkt-quick" id="mkt-quick"></div>
-  <div class="mkt-inp-row">
-    <input class="mkt-inp" id="mkt-inp" placeholder="Προσθήκη προϊόντος..." />
-    <button class="mkt-inp-btn" id="mkt-inp-btn">+</button>
-  </div>
-  <div class="mkt-list" id="mkt-list"></div>
-  <div class="mkt-footer">
-    <button class="mkt-copy-btn" id="mkt-copy">📋 Αντιγραφή για WhatsApp</button>
-    <button class="mkt-clear-btn" id="mkt-clear">🗑 Καθαρισμός</button>
-  </div>
-</div>
 </body>
 </html>
