@@ -507,16 +507,27 @@ function makeEditPanel(task){
   uploadBtn.onclick=()=>fileInp.click();
   const previewImg=document.createElement('img');previewImg.style.cssText='max-width:80px;max-height:60px;border-radius:6px;border:1px solid #2e4444;display:'+(photoData?'block':'none');
   if(photoData)previewImg.src=photoData;
-  const removeBtn=document.createElement('button');removeBtn.className='photo-remove-btn';removeBtn.type='button';removeBtn.textContent='✕ Αφαίρεση';
-  removeBtn.style.display=photoData?'inline':'none';
-  removeBtn.onclick=()=>{photoData=null;previewImg.style.display='none';removeBtn.style.display='none';uploadBtn.innerHTML='📎 Επιλογή φωτό';};
+  const removeBtn=document.createElement('button');removeBtn.className='photo-remove-btn';removeBtn.type='button';removeBtn.textContent='🗑 Αφαίρεση';
+  removeBtn.style.cssText='display:'+(photoData?'inline-flex':'none')+';align-items:center;gap:4px;background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;font-size:12px;cursor:pointer;margin-top:6px';
+  removeBtn.onclick=()=>{photoData=null;previewImg.style.display='none';removeBtn.style.display='none';cameraBtn.style.display='inline-flex';uploadBtn.innerHTML='📎 Επιλογή φωτό';};
+  // Camera button (mobile)
+  const cameraInp=document.createElement('input');cameraInp.type='file';cameraInp.accept='image/*';cameraInp.capture='environment';cameraInp.style.display='none';
+  const cameraBtn=document.createElement('button');cameraBtn.className='photo-upload-btn';cameraBtn.type='button';
+  cameraBtn.innerHTML='📷 Κάμερα';cameraBtn.style.display=photoData?'none':'inline-flex';
+  cameraBtn.onclick=()=>cameraInp.click();
+  cameraInp.onchange=()=>{
+    const file=cameraInp.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{photoData=e.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
+    reader.readAsDataURL(file);
+  };
   fileInp.onchange=()=>{
     const file=fileInp.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=e=>{
       photoData=e.target.result;
       previewImg.src=photoData;previewImg.style.display='block';
-      removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';
+      removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';
     };
     reader.readAsDataURL(file);
   };
@@ -529,7 +540,7 @@ function makeEditPanel(task){
     e.preventDefault();dropZone.style.borderColor='#2e4444';dropZone.style.color='#446666';
     const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
     const reader=new FileReader();
-    reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';};
+    reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
     reader.readAsDataURL(file);
   };
   dropZone.textContent='📂 σύρε φωτό εδώ ή Ctrl+V για paste';
@@ -548,7 +559,7 @@ function makeEditPanel(task){
       }
     }
   });
-  photoWrap.appendChild(fileInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(dropZone);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
+  photoWrap.appendChild(fileInp);photoWrap.appendChild(cameraInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(cameraBtn);photoWrap.appendChild(dropZone);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
   rPhoto.appendChild(lPhoto);rPhoto.appendChild(photoWrap);
 
   const r5=document.createElement('div');r5.className='edit-row';
