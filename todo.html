@@ -532,6 +532,22 @@ function makeEditPanel(task){
     reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';};
     reader.readAsDataURL(file);
   };
+  dropZone.textContent='📂 σύρε φωτό εδώ ή Ctrl+V για paste';
+  document.addEventListener('paste',function pasteHandler(e){
+    if(!panel.isConnected){document.removeEventListener('paste',pasteHandler);return;}
+    const items=e.clipboardData&&e.clipboardData.items;
+    if(!items)return;
+    for(let i=0;i<items.length;i++){
+      if(items[i].type.startsWith('image/')){
+        const file=items[i].getAsFile();
+        const reader=new FileReader();
+        reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';dropZone.style.borderColor='#4db6ac';setTimeout(()=>{dropZone.style.borderColor='#2e4444';},600);};
+        reader.readAsDataURL(file);
+        showToast('Screenshot αποθηκεύτηκε!','ok');
+        break;
+      }
+    }
+  });
   photoWrap.appendChild(fileInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(dropZone);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
   rPhoto.appendChild(lPhoto);rPhoto.appendChild(photoWrap);
 
