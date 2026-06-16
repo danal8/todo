@@ -192,6 +192,20 @@ input[type=date]{color-scheme:dark}
 .mkt-qty-btn{background:#2e4444;border:1px solid #3a5555;border-radius:4px;color:#e0f0f0;width:22px;height:22px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .mkt-qty-btn:hover{background:#00897b;border-color:#00897b;color:#fff}
 .mkt-qty-num{font-size:12px;color:#e0f0f0;min-width:18px;text-align:center;font-weight:700}
+
+/* ── Photo attachment ─────────────────────────────── */
+.task-photo{margin-top:8px;cursor:pointer}
+.task-photo img{max-width:120px;max-height:90px;border-radius:6px;border:1px solid #2e4444;object-fit:cover;transition:opacity .15s}
+.task-photo img:hover{opacity:.8}
+.photo-upload-btn{background:#2e4444;border:1px solid #3a5555;border-radius:6px;padding:5px 10px;color:#7ab8b8;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.photo-upload-btn:hover{border-color:#4db6ac;color:#e0f0f0}
+.photo-remove-btn{background:transparent;border:none;color:#446666;font-size:11px;cursor:pointer;padding:2px 4px;margin-left:4px}
+.photo-remove-btn:hover{color:#e74c3c}
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.8)}
+.lightbox-close{position:absolute;top:1rem;right:1.5rem;background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
 </style>
 </head>
 <body>
@@ -476,18 +490,45 @@ function makeEditPanel(task){
   const l4=document.createElement('span');l4.className='edit-label';l4.style.paddingTop='8px';l4.textContent='Παρατηρήσεις';
   const ni=document.createElement('textarea');ni.className='notes-inp';ni.placeholder='Παρατηρήσεις...';ni.value=task.notes||'';
   r4.appendChild(l4);r4.appendChild(ni);
+  // Photo upload row
+  const rPhoto=document.createElement('div');rPhoto.className='edit-row';rPhoto.style.alignItems='center';
+  const lPhoto=document.createElement('span');lPhoto.className='edit-label';lPhoto.textContent='Φωτογραφία';
+  const photoWrap=document.createElement('div');photoWrap.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+  let photoData = task.photo || null;
+  const fileInp=document.createElement('input');fileInp.type='file';fileInp.accept='image/*';fileInp.style.display='none';
+  const uploadBtn=document.createElement('button');uploadBtn.className='photo-upload-btn';uploadBtn.type='button';
+  uploadBtn.innerHTML='📎 '+(photoData?'Αλλαγή':'Επιλογή φωτό');
+  uploadBtn.onclick=()=>fileInp.click();
+  const previewImg=document.createElement('img');previewImg.style.cssText='max-width:80px;max-height:60px;border-radius:6px;border:1px solid #2e4444;display:'+(photoData?'block':'none');
+  if(photoData)previewImg.src=photoData;
+  const removeBtn=document.createElement('button');removeBtn.className='photo-remove-btn';removeBtn.type='button';removeBtn.textContent='✕ Αφαίρεση';
+  removeBtn.style.display=photoData?'inline':'none';
+  removeBtn.onclick=()=>{photoData=null;previewImg.style.display='none';removeBtn.style.display='none';uploadBtn.innerHTML='📎 Επιλογή φωτό';};
+  fileInp.onchange=()=>{
+    const file=fileInp.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      photoData=e.target.result;
+      previewImg.src=photoData;previewImg.style.display='block';
+      removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';
+    };
+    reader.readAsDataURL(file);
+  };
+  photoWrap.appendChild(fileInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
+  rPhoto.appendChild(lPhoto);rPhoto.appendChild(photoWrap);
+
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
   saveB.onclick=()=>{
     const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
     t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
     t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
-    t.prio=psel.value;t.notes=ni.value.trim();state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
+    t.prio=psel.value;t.notes=ni.value.trim();t.photo=photoData||null;state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
   canB.onclick=()=>{state.editingId=null;render();};
   r5.appendChild(saveB);r5.appendChild(canB);
-  panel.appendChild(r1);panel.appendChild(r2);panel.appendChild(r3);panel.appendChild(r4);panel.appendChild(r5);
+  panel.appendChild(r1);panel.appendChild(r2);panel.appendChild(r3);panel.appendChild(r4);panel.appendChild(rPhoto);panel.appendChild(r5);
   return panel;
 }
 function renderTasks(){
@@ -516,6 +557,12 @@ function renderTasks(){
       main.appendChild(meta);
     }
     if(task.notes&&state.editingId!==task.id){const nd=document.createElement('div');nd.className='task-notes';nd.textContent=task.notes;main.appendChild(nd);}
+    if(task.photo&&state.editingId!==task.id){
+      const pd=document.createElement('div');pd.className='task-photo';
+      const pi=document.createElement('img');pi.src=task.photo;pi.alt='Φωτογραφία';
+      pi.onclick=()=>openLightbox(task.photo);
+      pd.appendChild(pi);main.appendChild(pd);
+    }
     if(task.done&&task.completedAt&&state.editingId!==task.id){
       const cd=document.createElement('div');cd.className='completed-date';
       const dt=new Date(task.completedAt);
@@ -586,6 +633,15 @@ function addToCalendar(task, btn){
   showToast('Άνοιξε το Google Calendar — πάτα Save!','ok');
 }
 loadFromCloud();
+
+function openLightbox(src){
+  document.getElementById('lightbox-img').src=src;
+  document.getElementById('lightbox').classList.add('open');
+}
+document.getElementById('lightbox').onclick=()=>document.getElementById('lightbox').classList.remove('open');
+document.getElementById('lightbox-close').onclick=(e)=>{e.stopPropagation();document.getElementById('lightbox').classList.remove('open');};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lightbox').classList.remove('open');});
+
 </script>
 
 <!-- Floating Notes -->
@@ -993,5 +1049,11 @@ mktRender();
 </script>
 
 
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
 </body>
 </html>
