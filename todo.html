@@ -258,6 +258,12 @@ input[type=date]{color-scheme:dark}
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
+
 <script>
 const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
 const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
@@ -514,7 +520,19 @@ function makeEditPanel(task){
     };
     reader.readAsDataURL(file);
   };
-  photoWrap.appendChild(fileInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
+  const dropZone=document.createElement('div');
+  dropZone.style.cssText='border:2px dashed #2e4444;border-radius:6px;padding:6px 10px;font-size:12px;color:#446666;cursor:pointer;transition:all .15s';
+  dropZone.textContent='📂 σύρε φωτό εδώ';
+  dropZone.ondragover=(e)=>{e.preventDefault();dropZone.style.borderColor='#4db6ac';dropZone.style.color='#4db6ac';};
+  dropZone.ondragleave=()=>{dropZone.style.borderColor='#2e4444';dropZone.style.color='#446666';};
+  dropZone.ondrop=(e)=>{
+    e.preventDefault();dropZone.style.borderColor='#2e4444';dropZone.style.color='#446666';
+    const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
+    const reader=new FileReader();
+    reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';};
+    reader.readAsDataURL(file);
+  };
+  photoWrap.appendChild(fileInp);photoWrap.appendChild(uploadBtn);photoWrap.appendChild(dropZone);photoWrap.appendChild(previewImg);photoWrap.appendChild(removeBtn);
   rPhoto.appendChild(lPhoto);rPhoto.appendChild(photoWrap);
 
   const r5=document.createElement('div');r5.className='edit-row';
@@ -1050,10 +1068,5 @@ mktRender();
 
 
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightbox-close">✕</button>
-  <img id="lightbox-img" src="" alt="" />
-</div>
 </body>
 </html>
