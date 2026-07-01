@@ -518,12 +518,14 @@ function makeEditPanel(task){
   if(!window.__pd) window.__pd={};
   cameraInp.onchange=()=>{
     const file=cameraInp.files[0];if(!file)return;
+    dbLog('camera onchange, file:'+file.name+' size:'+file.size);
     const reader=new FileReader();
     reader.onload=e=>{
       photoData=e.target.result;
       window.__pd[task.id]=photoData;
       previewImg.src=photoData;previewImg.style.display='block';
       removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';
+      dbLog('photo loaded, size:'+photoData.length);
     };
     reader.readAsDataURL(file);
   };
@@ -570,18 +572,34 @@ function makeEditPanel(task){
 
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
+  // DEBUG div - visible on screen
+  const dbg=document.createElement('div');
+  dbg.style.cssText='background:#3a1a00;border:1px solid #f59e0b;border-radius:6px;padding:8px;font-size:11px;color:#fcd34d;font-family:monospace;margin-top:8px;white-space:pre-wrap;max-height:120px;overflow-y:auto';
+  dbg.textContent='Debug: ready';
+  panel.appendChild(dbg);
+
+  function dbLog(msg){dbg.textContent+='\n'+msg;dbg.scrollTop=dbg.scrollHeight;}
+
+  cameraInp.addEventListener('change',()=>{
+    dbLog('camera change fired, files:'+cameraInp.files.length);
+  });
+
   saveB.onclick=()=>{
-    // Search in all lists in case activeList changed after camera
-    let t=null;
-    for(const list of state.lists){
-      const found=(state.tasks[list]||[]).find(x=>x.id===task.id);
-      if(found){t=found;break;}
-    }
-    if(!t){showToast('Σφάλμα: δεν βρέθηκε η εγγραφή','err');return;}
+    dbLog('SAVE clicked');
+    dbLog('activeList:'+state.activeList);
+    dbLog('task.id:'+task.id);
+    dbLog('photoData type:'+(typeof photoData)+' null?'+(photoData===null));
+    dbLog('window.__pd:'+JSON.stringify(window.__pd&&window.__pd[task.id]?'HAS_PHOTO':'NO_PHOTO'));
+    const all=state.tasks[state.activeList];
+    dbLog('tasks in list:'+(all?all.length:'null'));
+    const t=all?all.find(t=>t.id===task.id):null;
+    dbLog('task found:'+(t?'YES':'NO'));
+    if(!t){dbLog('STOPPED: task not found');return;}
     t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
     t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
     t.prio=psel.value;t.notes=ni.value.trim();
     t.photo=(window.__pd&&window.__pd[task.id]!==undefined)?window.__pd[task.id]:(photoData||null);
+    dbLog('photo set:'+( t.photo?'YES':'NO'));
     state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
