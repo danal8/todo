@@ -515,12 +515,21 @@ function makeEditPanel(task){
   const cameraBtn=document.createElement('button');cameraBtn.className='photo-upload-btn';cameraBtn.type='button';
   cameraBtn.innerHTML='📷 Κάμερα';cameraBtn.style.display=photoData?'none':'inline-flex';
   cameraBtn.onclick=()=>cameraInp.click();
-  cameraInp.onchange=()=>{
+  function handleCameraFile(){
     const file=cameraInp.files[0];if(!file)return;
     const reader=new FileReader();
-    reader.onload=e=>{photoData=e.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
+    reader.onload=e=>{
+      photoData=e.target.result;
+      previewImg.src=photoData;
+      previewImg.style.display='block';
+      removeBtn.style.display='inline-flex';
+      cameraBtn.style.display='none';
+      uploadBtn.innerHTML='📎 Αλλαγή';
+    };
     reader.readAsDataURL(file);
-  };
+  }
+  cameraInp.addEventListener('change', handleCameraFile);
+  cameraInp.addEventListener('input', handleCameraFile);
   fileInp.onchange=()=>{
     const file=fileInp.files[0];if(!file)return;
     const reader=new FileReader();
