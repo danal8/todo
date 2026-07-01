@@ -525,6 +525,11 @@ function makeEditPanel(task){
       removeBtn.style.display='inline-flex';
       cameraBtn.style.display='none';
       uploadBtn.innerHTML='📎 Αλλαγή';
+      // scroll save button into view on mobile
+      setTimeout(()=>{
+        const sb=panel.querySelector('.save-btn');
+        if(sb) sb.scrollIntoView({behavior:'smooth',block:'center'});
+      },400);
     };
     reader.readAsDataURL(file);
   }
@@ -573,11 +578,15 @@ function makeEditPanel(task){
 
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
-  saveB.onclick=()=>{
+  function doSave(){
     const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
     t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
     t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
     t.prio=psel.value;t.notes=ni.value.trim();t.photo=photoData||null;state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
+  }
+  saveB.addEventListener('touchend',(e)=>{e.preventDefault();doSave();});
+  saveB.onclick=()=>{
+    doSave();
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
   canB.onclick=()=>{state.editingId=null;render();};
