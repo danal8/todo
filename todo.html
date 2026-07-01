@@ -500,46 +500,33 @@ function makeEditPanel(task){
   const rPhoto=document.createElement('div');rPhoto.className='edit-row';rPhoto.style.alignItems='center';
   const lPhoto=document.createElement('span');lPhoto.className='edit-label';lPhoto.textContent='Φωτογραφία';
   const photoWrap=document.createElement('div');photoWrap.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-  let photoData = task.photo || null;
+  if(!window.__pd) window.__pd={};
+  window.__pd[task.id] = task.photo || null;
   const fileInp=document.createElement('input');fileInp.type='file';fileInp.accept='image/*';fileInp.style.display='none';
   const uploadBtn=document.createElement('button');uploadBtn.className='photo-upload-btn';uploadBtn.type='button';
-  uploadBtn.innerHTML='📎 '+(photoData?'Αλλαγή':'Επιλογή φωτό');
+  uploadBtn.innerHTML='📎 '+(window.__pd[task.id]?'Αλλαγή':'Επιλογή φωτό');
   uploadBtn.onclick=()=>fileInp.click();
-  const previewImg=document.createElement('img');previewImg.style.cssText='max-width:80px;max-height:60px;border-radius:6px;border:1px solid #2e4444;display:'+(photoData?'block':'none');
-  if(photoData)previewImg.src=photoData;
+  const previewImg=document.createElement('img');previewImg.style.cssText='max-width:80px;max-height:60px;border-radius:6px;border:1px solid #2e4444;display:'+(window.__pd[task.id]?'block':'none');
+  if(window.__pd[task.id])previewImg.src=window.__pd[task.id];
   const removeBtn=document.createElement('button');removeBtn.className='photo-remove-btn';removeBtn.type='button';removeBtn.textContent='🗑 Αφαίρεση';
-  removeBtn.style.cssText='display:'+(photoData?'inline-flex':'none')+';align-items:center;gap:4px;background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;font-size:12px;cursor:pointer;margin-top:6px';
-  removeBtn.onclick=()=>{photoData=null;previewImg.style.display='none';removeBtn.style.display='none';cameraBtn.style.display='inline-flex';uploadBtn.innerHTML='📎 Επιλογή φωτό';};
+  removeBtn.style.cssText='display:'+(window.__pd[task.id]?'inline-flex':'none')+';align-items:center;gap:4px;background:#3a1a1a;border:1px solid #7a1e1e;border-radius:6px;padding:5px 10px;color:#e74c3c;font-size:12px;cursor:pointer;margin-top:6px';
+  removeBtn.onclick=()=>{window.__pd[task.id]=null;previewImg.style.display='none';removeBtn.style.display='none';cameraBtn.style.display='inline-flex';uploadBtn.innerHTML='📎 Επιλογή φωτό';};
   // Camera button (mobile)
   const cameraInp=document.createElement('input');cameraInp.type='file';cameraInp.accept='image/*';cameraInp.capture='environment';cameraInp.style.display='none';
   const cameraBtn=document.createElement('button');cameraBtn.className='photo-upload-btn';cameraBtn.type='button';
-  cameraBtn.innerHTML='📷 Κάμερα';cameraBtn.style.display=photoData?'none':'inline-flex';
+  cameraBtn.innerHTML='📷 Κάμερα';cameraBtn.style.display=window.__pd[task.id]?'none':'inline-flex';
   cameraBtn.onclick=()=>cameraInp.click();
-  function handleCameraFile(){
+  cameraInp.onchange=()=>{
     const file=cameraInp.files[0];if(!file)return;
     const reader=new FileReader();
-    reader.onload=e=>{
-      photoData=e.target.result;
-      previewImg.src=photoData;
-      previewImg.style.display='block';
-      removeBtn.style.display='inline-flex';
-      cameraBtn.style.display='none';
-      uploadBtn.innerHTML='📎 Αλλαγή';
-      // scroll save button into view on mobile
-      setTimeout(()=>{
-        const sb=panel.querySelector('.save-btn');
-        if(sb) sb.scrollIntoView({behavior:'smooth',block:'center'});
-      },400);
-    };
+    reader.onload=e=>{window.__pd[task.id]=e.target.result;previewImg.src=window.__pd[task.id];previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
     reader.readAsDataURL(file);
-  }
-  cameraInp.addEventListener('change', handleCameraFile);
-  cameraInp.addEventListener('input', handleCameraFile);
+  };
   fileInp.onchange=()=>{
     const file=fileInp.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=e=>{
-      photoData=e.target.result;
+      window.__pd[task.id]=e.target.result;
       previewImg.src=photoData;previewImg.style.display='block';
       removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';
     };
@@ -554,7 +541,7 @@ function makeEditPanel(task){
     e.preventDefault();dropZone.style.borderColor='#2e4444';dropZone.style.color='#446666';
     const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
     const reader=new FileReader();
-    reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
+    reader.onload=ev=>{window.__pd[task.id]=ev.target.result;previewImg.src=window.__pd[task.id];previewImg.style.display='block';removeBtn.style.display='inline-flex';cameraBtn.style.display='none';uploadBtn.innerHTML='📎 Αλλαγή';};
     reader.readAsDataURL(file);
   };
   dropZone.textContent='📂 σύρε φωτό εδώ ή Ctrl+V για paste';
@@ -566,7 +553,7 @@ function makeEditPanel(task){
       if(items[i].type.startsWith('image/')){
         const file=items[i].getAsFile();
         const reader=new FileReader();
-        reader.onload=ev=>{photoData=ev.target.result;previewImg.src=photoData;previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';dropZone.style.borderColor='#4db6ac';setTimeout(()=>{dropZone.style.borderColor='#2e4444';},600);};
+        reader.onload=ev=>{window.__pd[task.id]=ev.target.result;previewImg.src=window.__pd[task.id];previewImg.style.display='block';removeBtn.style.display='inline';uploadBtn.innerHTML='📎 Αλλαγή';dropZone.style.borderColor='#4db6ac';setTimeout(()=>{dropZone.style.borderColor='#2e4444';},600);};
         reader.readAsDataURL(file);
         showToast('Screenshot αποθηκεύτηκε!','ok');
         break;
@@ -578,15 +565,11 @@ function makeEditPanel(task){
 
   const r5=document.createElement('div');r5.className='edit-row';
   const saveB=document.createElement('button');saveB.className='save-btn';saveB.textContent='Αποθήκευση';
-  function doSave(){
+  saveB.onclick=()=>{
     const all=state.tasks[state.activeList];const t=all.find(t=>t.id===task.id);if(!t)return;
     t.text=ti.value.trim()||t.text;t.date=di.value||'';t.allDay=adc.checked;
     t.tsH=tsg._h.value||'';t.tsM=tsg._m.value||'';t.teH=teg._h.value||'';t.teM=teg._m.value||'';
-    t.prio=psel.value;t.notes=ni.value.trim();t.photo=photoData||null;state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
-  }
-  saveB.addEventListener('touchend',(e)=>{e.preventDefault();doSave();});
-  saveB.onclick=()=>{
-    doSave();
+    t.prio=psel.value;t.notes=ni.value.trim();t.photo=window.__pd[task.id]||null;state.editingId=null;save();render();showToast('Αποθηκεύτηκε!','ok');
   };
   const canB=document.createElement('button');canB.className='cancel-btn';canB.textContent='Ακύρωση';
   canB.onclick=()=>{state.editingId=null;render();};
