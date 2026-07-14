@@ -301,10 +301,12 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <script>
+// Αφαιρούμε εντελώς οποιοδήποτε service worker είχε καταχωρηθεί παλιότερα,
+// ώστε να μην "κολλάει" ποτέ ξανά σε παλιά έκδοση. Δεν αγγίζει localStorage/cookies/δεδομένα.
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  }).catch(() => {});
 }
 const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
 const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
