@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>To-Do Lists</title>
+<meta name="theme-color" content="#1e2a2a">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#1e2a2a;color:#e0f0f0;font-family:Arial,sans-serif;padding:1.5rem;min-height:100vh}
@@ -26,6 +30,8 @@ h1{font-size:22px;font-weight:500;color:#e0f0f0;margin-bottom:1.25rem;display:fl
 .edit-pencil{background:transparent;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:#7ab8b8;border-radius:4px}
 .edit-pencil:hover{color:#e0f0f0}
 .add-panel{background:#243333;border:1px solid #2e4444;border-radius:12px;padding:14px;margin-bottom:1.25rem}
+.add-panel-toggle{display:none;width:100%;background:#243333;border:1px solid #2e4444;border-radius:12px;padding:11px 14px;margin-bottom:1.25rem;color:#4db6ac;font-size:14px;font-weight:600;cursor:pointer;text-align:left;align-items:center;gap:8px}
+.add-panel-toggle:active{border-color:#4db6ac}
 .row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
 .row:last-child{margin-bottom:0}
 .inp{background:#1a2828;border:1px solid #2e4444;border-radius:8px;padding:9px 12px;color:#e0f0f0;font-size:14px;outline:none;flex:1;min-width:0}
@@ -206,6 +212,22 @@ input[type=date]{color-scheme:dark}
 .lightbox.open{display:flex}
 .lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.8)}
 .lightbox-close{position:absolute;top:1rem;right:1.5rem;background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+
+@media (max-width: 640px){
+  body{padding:.75rem}
+  h1{font-size:17px;margin-bottom:.6rem;gap:6px}
+  .sync-bar{padding:5px 10px;margin-bottom:.6rem;font-size:11px;gap:6px}
+  .sync-dot{width:6px;height:6px}
+  .lists-row{gap:5px;margin-bottom:.6rem}
+  .list-tab{padding:4px 11px;font-size:12px}
+  .list-tab.add-list{padding:1px 10px}
+  .notes-fab,.market-fab{padding:4px 10px;font-size:12px}
+  .add-panel{display:none}
+  .add-panel.open{display:block}
+  .add-panel-toggle{display:flex}
+  .add-panel-toggle.hidden{display:none}
+  .stats{gap:8px;font-size:11px;margin-bottom:.5rem}
+}
 </style>
 </head>
 <body>
@@ -217,7 +239,8 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <div class="lists-row" id="lists-row"></div>
-<div class="add-panel">
+<button class="add-panel-toggle" id="add-panel-toggle">+ Νέα εργασία</button>
+<div class="add-panel" id="add-panel">
   <div class="row">
     <input id="inp-task" class="inp" type="text" placeholder="Νέα εργασία..." />
     <select class="sel" id="sel-prio">
@@ -265,6 +288,11 @@ input[type=date]{color-scheme:dark}
 </div>
 
 <script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 const SUPA_URL='https://odtbtugzilxsfqxlpofq.supabase.co';
 const SUPA_KEY='sb_publishable_ch-7C1ihpZRrxEhXFqV1xA_hXPwq61S';
 // Early declarations so renderLists() works before notes/market scripts load
@@ -315,6 +343,22 @@ document.getElementById('chk-allday').onchange=function(){
   w.style.opacity=this.checked?'0.3':'1';w.style.pointerEvents=this.checked?'none':'auto';
 };
 document.getElementById('clear-btn').onclick=clearDT;
+
+const addPanelToggle=document.getElementById('add-panel-toggle');
+const addPanelEl=document.getElementById('add-panel');
+if(addPanelToggle){
+  addPanelToggle.onclick=()=>{
+    addPanelEl.classList.add('open');
+    addPanelToggle.classList.add('hidden');
+    setTimeout(()=>document.getElementById('inp-task').focus(),50);
+  };
+}
+function closeAddPanelMobile(){
+  if(window.innerWidth<=640){
+    addPanelEl.classList.remove('open');
+    if(addPanelToggle) addPanelToggle.classList.remove('hidden');
+  }
+}
 
 let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'active',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
 
@@ -664,7 +708,7 @@ function addTask(){
   const prio=document.getElementById('sel-prio').value;
   if(!state.tasks[state.activeList])state.tasks[state.activeList]=[];
   state.tasks[state.activeList].unshift({text:txt,prio,done:false,date,allDay,tsH,tsM,teH,teM,notes:'',id:Date.now()});
-  document.getElementById('inp-task').value='';clearDT();state.filter='all';save();render();
+  document.getElementById('inp-task').value='';clearDT();state.filter='all';save();render();closeAddPanelMobile();
 }
 function addToCalendar(task, btn){
   if(!task.date){ showToast('Δεν έχει ημερομηνία!','err'); return; }
