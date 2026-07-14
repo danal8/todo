@@ -32,6 +32,7 @@ h1{font-size:22px;font-weight:500;color:#e0f0f0;margin-bottom:1.25rem;display:fl
 .add-panel{background:#243333;border:1px solid #2e4444;border-radius:12px;padding:14px;margin-bottom:1.25rem}
 .add-panel-toggle{display:none;width:100%;background:#243333;border:1px solid #2e4444;border-radius:12px;padding:11px 14px;margin-bottom:1.25rem;color:#4db6ac;font-size:14px;font-weight:600;cursor:pointer;text-align:left;align-items:center;gap:8px}
 .add-panel-toggle:active{border-color:#4db6ac}
+.add-panel-close{display:none}
 .row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
 .row:last-child{margin-bottom:0}
 .inp{background:#1a2828;border:1px solid #2e4444;border-radius:8px;padding:9px 12px;color:#e0f0f0;font-size:14px;outline:none;flex:1;min-width:0}
@@ -218,15 +219,26 @@ input[type=date]{color-scheme:dark}
   h1{font-size:17px;margin-bottom:.6rem;gap:6px}
   .sync-bar{padding:5px 10px;margin-bottom:.6rem;font-size:11px;gap:6px}
   .sync-dot{width:6px;height:6px}
-  .lists-row{gap:5px;margin-bottom:.6rem}
-  .list-tab{padding:4px 11px;font-size:12px}
-  .list-tab.add-list{padding:1px 10px}
-  .notes-fab,.market-fab{padding:4px 10px;font-size:12px}
+  .lists-row{gap:7px;margin-bottom:.6rem}
+  .list-tab{padding:8px 16px;font-size:14px}
+  .list-tab.add-list{padding:4px 15px;font-size:20px}
+  .edit-pencil{padding:6px 8px;font-size:15px}
+  .notes-fab,.market-fab{padding:7px 14px;font-size:13px}
   .add-panel{display:none}
   .add-panel.open{display:block}
   .add-panel-toggle{display:flex}
   .add-panel-toggle.hidden{display:none}
-  .stats{gap:8px;font-size:11px;margin-bottom:.5rem}
+  .stats{gap:7px;font-size:10px;margin-bottom:.4rem;row-gap:2px}
+  .toolbar{gap:5px;margin-bottom:.6rem}
+  .filters{gap:4px}
+  .filter-btn{padding:3px 10px;font-size:11px}
+  .sort-row{gap:4px}
+  .sort-btn{padding:3px 10px;font-size:11px}
+  #search-inp{height:28px !important;font-size:12px !important}
+  .add-panel-close{
+    display:block;width:100%;background:transparent;border:1px solid #2e4444;border-radius:8px;
+    padding:7px;margin-bottom:10px;color:#7ab8b8;font-size:12px;cursor:pointer;
+  }
 }
 </style>
 </head>
@@ -241,6 +253,7 @@ input[type=date]{color-scheme:dark}
 <div class="lists-row" id="lists-row"></div>
 <button class="add-panel-toggle" id="add-panel-toggle">+ Νέα εργασία</button>
 <div class="add-panel" id="add-panel">
+  <button class="add-panel-close" id="add-panel-close" type="button">✕ Κλείσιμο</button>
   <div class="row">
     <input id="inp-task" class="inp" type="text" placeholder="Νέα εργασία..." />
     <select class="sel" id="sel-prio">
@@ -358,6 +371,10 @@ function closeAddPanelMobile(){
     addPanelEl.classList.remove('open');
     if(addPanelToggle) addPanelToggle.classList.remove('hidden');
   }
+}
+const addPanelClose=document.getElementById('add-panel-close');
+if(addPanelClose){
+  addPanelClose.onclick=()=>closeAddPanelMobile();
 }
 
 let state={lists:['Γενικά','Εργασία','Προσωπικά'],activeList:'Γενικά',tasks:{'Γενικά':[],'Εργασία':[],'Προσωπικά':[]},filter:'active',sort:'none',sortDir:1,renamingList:null,addingList:false,editingId:null};
