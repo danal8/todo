@@ -26,24 +26,22 @@ function persist() {
   store.save(snapshot);
 }
 
-function buildTimeSelect(selectEl) {
-  selectEl.innerHTML = '<option value="">--</option>';
+// ── Ώρα: helpers μετατροπής native <input type="time"> ("HH:MM") <-> tsH/tsM ──
+function timeToHM(t) {
+  if (!t) return { h: '', m: '' };
+  const [h, m] = t.split(':');
+  return { h: h || '', m: m || '' };
 }
-function fillHours(selectEl) {
-  buildTimeSelect(selectEl);
-  for (let h = 0; h < 24; h++) {
-    const o = document.createElement('option');
-    o.value = pad(h); o.textContent = pad(h);
-    selectEl.appendChild(o);
-  }
+function hmToTime(h, m) {
+  if (!h) return '';
+  return h + ':' + (m || '00');
 }
-function fillMinutes(selectEl) {
-  buildTimeSelect(selectEl);
-  for (let m = 0; m < 60; m += 5) {
-    const o = document.createElement('option');
-    o.value = pad(m); o.textContent = pad(m);
-    selectEl.appendChild(o);
-  }
+function addMinutesToTime(t, mins) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  let total = h * 60 + m + mins;
+  total = ((total % 1440) + 1440) % 1440;
+  return pad(Math.floor(total / 60)) + ':' + pad(total % 60);
 }
 
 const prioRank = { high: 0, med: 1, low: 2 };
@@ -80,7 +78,8 @@ function fmtTime(h, m) { if (!h) return ''; return `${h}:${m}`; }
 
 function clearDT() {
   document.getElementById('inp-date').value = '';
-  ['ts-h', 'ts-m', 'te-h', 'te-m'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ts-time').value = '';
+  document.getElementById('te-time').value = '';
   document.getElementById('chk-allday').checked = false;
   const w = document.getElementById('time-wrap');
   w.style.opacity = '1'; w.style.pointerEvents = 'auto';
@@ -204,15 +203,25 @@ function renderSort() {
   sp.onclick = () => { if (state.sort === 'prio') state.sortDir *= -1; else { state.sort = 'prio'; state.sortDir = 1; } render(); };
 }
 
-function makeTimeGroup(hv, mv) {
-  const g = document.createElement('div'); g.className = 'time-group';
-  const hs = document.createElement('select'); hs.className = 'etsel';
-  fillHours(hs); hs.value = hv || '';
-  const sep = document.createElement('span'); sep.className = 'time-sep'; sep.textContent = ':';
-  const ms = document.createElement('select'); ms.className = 'etsel';
-  fillMinutes(ms); ms.value = mv || '';
-  g.appendChild(hs); g.appendChild(sep); g.appendChild(ms);
-  g._h = hs; g._m = ms;
+// Native time-range editor (χρησιμοποιείται στο edit panel) — 2 πεδία ώρας + κουμπιά διάρκειας.
+function makeTimeRangeEditor(tsH, tsM, teH, teM) {
+  const g = document.createElement('div'); g.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap';
+  const startInp = document.createElement('input'); startInp.type = 'time'; startInp.className = 'tinp';
+  startInp.value = hmToTime(tsH, tsM);
+  const sep = document.createElement('span'); sep.className = 'time-sep'; sep.textContent = '–';
+  const endInp = document.createElement('input'); endInp.type = 'time'; endInp.className = 'tinp';
+  endInp.value = hmToTime(teH, teM);
+  const durWrap = document.createElement('div'); durWrap.className = 'dur-quick';
+  [30, 60, 90].forEach(min => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'dur-btn'; b.textContent = '+' + min;
+    b.onclick = () => {
+      if (!startInp.value) { showToast('Βάλε πρώτα ώρα έναρξης', 'err'); return; }
+      endInp.value = addMinutesToTime(startInp.value, min);
+    };
+    durWrap.appendChild(b);
+  });
+  g.appendChild(startInp); g.appendChild(sep); g.appendChild(endInp); g.appendChild(durWrap);
+  g._start = startInp; g._end = endInp;
   return g;
 }
 
@@ -236,16 +245,14 @@ function makeEditPanel(task) {
 
   const r3 = document.createElement('div'); r3.className = 'edit-row';
   const l3 = document.createElement('span'); l3.className = 'edit-label'; l3.textContent = 'Ώρα';
-  const tsg = makeTimeGroup(task.tsH, task.tsM);
-  const sep2 = document.createElement('span'); sep2.className = 'time-sep'; sep2.textContent = '–';
-  const teg = makeTimeGroup(task.teH, task.teM);
+  const timeEditor = makeTimeRangeEditor(task.tsH, task.tsM, task.teH, task.teM);
   const psel = document.createElement('select'); psel.className = 'esel';
   [{ v: 'low', t: '🟢 Χαμηλή' }, { v: 'med', t: '🟡 Μέτρια' }, { v: 'high', t: '🔴 Υψηλή' }].forEach(p => {
     const o = document.createElement('option'); o.value = p.v; o.textContent = p.t;
     if (p.v === task.prio) o.selected = true;
     psel.appendChild(o);
   });
-  r3.appendChild(l3); r3.appendChild(tsg); r3.appendChild(sep2); r3.appendChild(teg); r3.appendChild(psel);
+  r3.appendChild(l3); r3.appendChild(timeEditor); r3.appendChild(psel);
 
   const r4 = document.createElement('div'); r4.className = 'edit-row'; r4.style.alignItems = 'flex-start';
   const l4 = document.createElement('span'); l4.className = 'edit-label'; l4.style.paddingTop = '8px'; l4.textContent = 'Παρατηρήσεις';
@@ -266,8 +273,9 @@ function makeEditPanel(task) {
       t.text = ti.value.trim() || t.text;
       t.date = di.value || '';
       t.allDay = adc.checked;
-      t.tsH = tsg._h.value || ''; t.tsM = tsg._m.value || '';
-      t.teH = teg._h.value || ''; t.teM = teg._m.value || '';
+      const ts = timeToHM(timeEditor._start.value), te = timeToHM(timeEditor._end.value);
+      t.tsH = ts.h; t.tsM = ts.m;
+      t.teH = te.h; t.teM = te.m;
       t.prio = psel.value;
       t.notes = ni.value.trim();
       t.photo = photo;
@@ -526,13 +534,11 @@ function addTask() {
   if (!txt) return;
   const date = document.getElementById('inp-date').value || '';
   const allDay = document.getElementById('chk-allday').checked;
-  const tsH = (!allDay && document.getElementById('ts-h').value) || '';
-  const tsM = (!allDay && document.getElementById('ts-m').value) || '';
-  const teH = (!allDay && document.getElementById('te-h').value) || '';
-  const teM = (!allDay && document.getElementById('te-m').value) || '';
+  const ts = timeToHM(!allDay ? document.getElementById('ts-time').value : '');
+  const te = timeToHM(!allDay ? document.getElementById('te-time').value : '');
   const prio = document.getElementById('sel-prio').value;
   if (!state.tasks[state.activeList]) state.tasks[state.activeList] = [];
-  state.tasks[state.activeList].unshift({ text: txt, prio, done: false, date, allDay, tsH, tsM, teH, teM, notes: '', id: Date.now() });
+  state.tasks[state.activeList].unshift({ text: txt, prio, done: false, date, allDay, tsH: ts.h, tsM: ts.m, teH: te.h, teM: te.m, notes: '', id: Date.now() });
   document.getElementById('inp-task').value = '';
   clearDT();
   state.filter = 'all';
@@ -549,15 +555,21 @@ export function render() {
 }
 
 export async function initTodos() {
-  fillHours(document.getElementById('ts-h')); fillMinutes(document.getElementById('ts-m'));
-  fillHours(document.getElementById('te-h')); fillMinutes(document.getElementById('te-m'));
-
   document.getElementById('clear-btn').onclick = clearDT;
   document.getElementById('chk-allday').onchange = function () {
     const w = document.getElementById('time-wrap');
     w.style.opacity = this.checked ? '0.3' : '1';
     w.style.pointerEvents = this.checked ? 'none' : 'auto';
   };
+
+  // Κουμπιά γρήγορης διάρκειας στο add-panel (+30/+60/+90 λεπτά από την ώρα έναρξης)
+  document.querySelectorAll('#add-panel .dur-btn').forEach(b => {
+    b.onclick = () => {
+      const st = document.getElementById('ts-time').value;
+      if (!st) { showToast('Βάλε πρώτα ώρα έναρξης', 'err'); return; }
+      document.getElementById('te-time').value = addMinutesToTime(st, parseInt(b.dataset.min, 10));
+    };
+  });
 
   const addPanelToggle = document.getElementById('add-panel-toggle');
   const addPanelEl = document.getElementById('add-panel');

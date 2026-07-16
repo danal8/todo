@@ -30,6 +30,11 @@ h1{font-size:22px;font-weight:500;color:#e0f0f0;margin-bottom:1.25rem;display:fl
 .inp-date{width:145px;flex:none;color:#e0f0f0}
 .tsel{background:#1a2828;border:1px solid #2e4444;border-radius:8px;padding:8px 6px;color:#e0f0f0;font-size:14px;outline:none;cursor:pointer;width:66px;flex:none;text-align:center}
 .tsel option{background:#1e2a2a;color:#e0f0f0}
+.tinp{background:#1a2828;border:1px solid #2e4444;border-radius:8px;padding:8px 10px;color:#e0f0f0;font-size:14px;outline:none;cursor:pointer;width:110px;flex:none;text-align:center}
+.tinp:focus{border-color:#4db6ac}
+.dur-quick{display:flex;gap:4px;flex-shrink:0}
+.dur-btn{background:#1a2828;border:1px solid #2e4444;border-radius:6px;padding:6px 9px;color:#7ab8b8;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;white-space:nowrap}
+.dur-btn:hover{background:#2e4444;border-color:#4db6ac;color:#e0f0f0}
 .sel{background:#1a2828;border:1px solid #2e4444;border-radius:8px;padding:9px 10px;color:#e0f0f0;font-size:13px;outline:none;cursor:pointer}
 .sel option{background:#1e2a2a;color:#e0f0f0}
 .add-btn{background:#00897b;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
@@ -101,6 +106,7 @@ h1{font-size:22px;font-weight:500;color:#e0f0f0;margin-bottom:1.25rem;display:fl
 .toast.err{background:#3a1a1a;color:#e74c3c;border-color:#7a1e1e}
 .toast.ok{background:#1a3a1a;color:#4ade80;border-color:#2d6b2d}
 input[type=date]{color-scheme:dark}
+input[type=time]{color-scheme:dark}
 
 /* ── Floating Notes ───────────────────────────────────── */
 .notes-fab{padding:5px 14px;border-radius:20px;border:1px solid #4db6ac;background:transparent;color:#4db6ac;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;position:relative}
@@ -218,6 +224,8 @@ input[type=date]{color-scheme:dark}
   .sort-row{gap:4px}
   .sort-btn{padding:3px 10px;font-size:11px}
   #search-inp{height:28px !important;font-size:12px !important}
+  .tinp{width:auto;flex:1;min-width:90px;padding:9px 8px;font-size:13px}
+  .dur-btn{padding:8px 10px;font-size:12px}
   .add-panel-close{
     display:block;width:100%;background:transparent;border:1px solid #2e4444;border-radius:8px;
     padding:7px;margin-bottom:10px;color:#7ab8b8;font-size:12px;cursor:pointer;
