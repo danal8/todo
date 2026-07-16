@@ -85,13 +85,7 @@ function clearDT() {
   w.style.opacity = '1'; w.style.pointerEvents = 'auto';
 }
 
-function closeAddPanelMobile() {
-  if (window.innerWidth <= 640) {
-    document.getElementById('add-panel').classList.remove('open');
-    const t = document.getElementById('add-panel-toggle');
-    if (t) t.classList.remove('hidden');
-  }
-}
+let addPanelOpen = false;
 
 function commitRename(old, nw) {
   nw = nw.trim();
@@ -543,7 +537,6 @@ function addTask() {
   clearDT();
   state.filter = 'all';
   persist(); render();
-  closeAddPanelMobile();
 }
 
 export function render() {
@@ -571,17 +564,21 @@ export async function initTodos() {
     };
   });
 
-  const addPanelToggle = document.getElementById('add-panel-toggle');
-  const addPanelEl = document.getElementById('add-panel');
-  if (addPanelToggle) {
-    addPanelToggle.onclick = () => {
-      addPanelEl.classList.add('open');
-      addPanelToggle.classList.add('hidden');
-      setTimeout(() => document.getElementById('inp-task').focus(), 50);
+  const addPanelTitle = document.getElementById('add-panel-title');
+  const addPanelIcon = document.getElementById('add-panel-icon');
+  const addPanelBody = document.getElementById('add-panel-body');
+  function updateAddPanelUI() {
+    addPanelIcon.textContent = addPanelOpen ? '−' : '+';
+    addPanelBody.style.display = addPanelOpen ? '' : 'none';
+  }
+  if (addPanelTitle) {
+    addPanelTitle.onclick = () => {
+      addPanelOpen = !addPanelOpen;
+      updateAddPanelUI();
+      if (addPanelOpen) setTimeout(() => document.getElementById('inp-task').focus(), 50);
     };
   }
-  const addPanelClose = document.getElementById('add-panel-close');
-  if (addPanelClose) addPanelClose.onclick = closeAddPanelMobile;
+  updateAddPanelUI();
 
   document.getElementById('add-btn').onclick = addTask;
   document.getElementById('inp-task').onkeydown = e => { if (e.key === 'Enter') addTask(); };
