@@ -569,7 +569,7 @@ export async function initTodos() {
   const addPanelBody = document.getElementById('add-panel-body');
   function updateAddPanelUI() {
     addPanelIcon.textContent = addPanelOpen ? '−' : '+';
-    addPanelBody.style.display = addPanelOpen ? '' : 'none';
+    addPanelBody.style.display = addPanelOpen ? 'block' : 'none';
   }
   if (addPanelTitle) {
     addPanelTitle.onclick = () => {
