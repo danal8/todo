@@ -19,7 +19,9 @@ h1{font-size:22px;font-weight:500;color:#e0f0f0;margin-bottom:1.25rem;display:fl
 .edit-pencil{background:transparent;border:none;cursor:pointer;padding:2px 5px;font-size:13px;color:#7ab8b8;border-radius:4px}
 .edit-pencil:hover{color:#e0f0f0}
 .add-panel{background:#243333;border:1px solid #2e4444;border-radius:12px;padding:14px;margin-bottom:1.25rem}
-.add-panel-title{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;font-size:14px;font-weight:600;color:#4db6ac;margin-bottom:10px}
+.add-panel-title{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;font-size:14px;font-weight:600;color:#4db6ac;margin:-14px -14px 10px -14px;padding:14px;border-radius:12px 12px 0 0;transition:background .12s}
+.add-panel-title:hover{background:#1e2e2e}
+.add-panel-title:active{background:#2e4444}
 .add-panel-title span{display:inline-block;width:14px;text-align:center;font-weight:800}
 #add-panel-body{display:none}
 .row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
@@ -222,4 +224,5 @@ input[type=time]{color-scheme:dark}
   #search-inp{height:28px !important;font-size:12px !important}
   .tinp{width:auto;flex:1;min-width:90px;padding:9px 8px;font-size:13px}
   .dur-btn{padding:8px 10px;font-size:12px}
+  .add-panel-title{padding:14px;font-size:15px}
 }
